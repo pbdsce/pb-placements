@@ -315,7 +315,7 @@ export const AchievementService = {
       .eq('member_id', memberId)
       .order('date', { ascending: false });
     
-    if (error) return [];
+    if (error) throw error;
     return data || [];
   },
   
@@ -328,7 +328,16 @@ export const AchievementService = {
     
     if (error) throw error;
     return data;
-  }
+  },
+  
+  async deleteAchievement(achievementId: string) {
+    const { error } = await supabase
+      .from('achievements')
+      .delete()
+      .eq('id', achievementId);
+    
+    if (error) throw error;
+  },
 };
 
 // Experience database operations

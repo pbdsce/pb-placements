@@ -27,12 +27,6 @@ export function ExperienceSection({ experiences, isEditable }: ExperienceSection
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Experience</h2>
-        {isEditable && (
-          <Button variant="outline" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Experience
-          </Button>
-        )}
       </div>
       
       <div className="space-y-6">
