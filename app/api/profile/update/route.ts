@@ -22,34 +22,33 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     // 1. Upsert Member
-    const { id, ...memberData } = member;
-    await MemberService.updateMember(id, memberData);
+    await MemberService.upsertMember(member);
     
     // 2. Clear and re-insert skills
-    await SkillService.removeSkillsByMemberId(id);
+    await SkillService.removeSkillsByMemberId(member.id);
     if (skills && skills.length > 0) {
       const skillIds = await Promise.all(
         skills.map((name: string) => SkillService.getOrCreateSkill(name))
       );
       await Promise.all(
-        skillIds.map(skillId => SkillService.addSkillToMember(id, skillId))
+        skillIds.map(skillId => SkillService.addSkillToMember(member.id, skillId))
       );
     }
 
     // 3. Clear and re-insert experiences
-    await ExperienceService.removeExperiencesByMemberId(id);
+    await ExperienceService.removeExperiencesByMemberId(member.id);
     if (experiences && experiences.length > 0) {
       await Promise.all(
-        experiences.map((exp: any) => ExperienceService.createExperience({ ...exp, member_id: id }))
+        experiences.map((exp: any) => ExperienceService.createExperience({ ...exp, member_id: member.id }))
       );
     }
     
     // 4. Clear and re-insert achievements
-    await AchievementService.removeAchievementsByMemberId(id);
+    await AchievementService.removeAchievementsByMemberId(member.id);
     if (achievements && achievements.length > 0) {
       await Promise.all(
         achievements.map((desc: string) => AchievementService.createAchievement({ 
-          member_id: id, 
+          member_id: member.id, 
           description: desc,
           title: 'Achievement', // title is required, but not used in the UI
           date: new Date() 
@@ -58,15 +57,15 @@ export async function POST(req: NextRequest) {
     }
     
     // 5. Clear and re-insert links
-    await LinkService.removeLinksByMemberId(id);
+    await LinkService.removeLinksByMemberId(member.id);
     if (links && links.length > 0) {
       await Promise.all(
-        links.map((link: any) => LinkService.createLink({ ...link, member_id: id }))
+        links.map((link: any) => LinkService.createLink({ ...link, member_id: member.id }))
       );
     }
 
     // 6. Revalidate cache for the profile page
-    revalidatePath(`/profile/${id}`);
+    revalidatePath(`/profile/${member.id}`);
 
     return NextResponse.json({ message: 'Profile updated successfully' });
 
