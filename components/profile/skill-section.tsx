@@ -14,12 +14,6 @@ export function SkillSection({ skills, isEditable = false }: SkillSectionProps) 
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Skills</h2>
-        {isEditable && (
-          <Button variant="ghost" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Skill
-          </Button>
-        )}
       </div>
       <div className="flex flex-wrap gap-2">
         {skills.map((skill) => (

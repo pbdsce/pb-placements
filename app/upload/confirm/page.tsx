@@ -21,6 +21,13 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ParsedData {
   id: string;
@@ -40,7 +47,7 @@ interface ParsedData {
   }[];
   github_url?: string;
   linkedin_url?: string;
-  resume_url?: string;
+  file_path?: string;
 }
 
 const supabase = createClient(
@@ -57,6 +64,8 @@ export default function ConfirmPage() {
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingMemberId, setExistingMemberId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -64,45 +73,129 @@ export default function ConfirmPage() {
     year_of_study: "",
     github_url: "",
     linkedin_url: "",
-    resume_url: "",
     experiences: [] as ParsedData['experiences'],
     achievements: [] as string[],
+    skills: [] as string[],
+    resume_url: "",
   });
 
+  const populateFormAndParsedData = (data: any, memberId: string) => {
+    const experiences = data.experiences?.map((exp: any) => ({
+      company: exp.company || '',
+      role: exp.role || '',
+      description: exp.description || '',
+      start_date: exp.start_date || '',
+      end_date: exp.end_date || null,
+      is_current: exp.is_current || false,
+    })) || [];
+
+    const achievements = data.achievements?.map((a: any) => a.description || a) || [];
+    const skills = data.skills?.map((s: any) => s.name || s) || [];
+    const githubLink = data.links?.find((l: any) => l.name === 'GitHub')?.url || data.github_url || '';
+    const linkedinLink = data.links?.find((l: any) => l.name === 'LinkedIn')?.url || data.linkedin_url || '';
+
+    setParsedData({
+      id: memberId,
+      name: data.name || '',
+      email: data.email || '',
+      skills: skills,
+      domain: data.domain || '',
+      year: data.year_of_study || data.year || undefined,
+      achievements: achievements,
+      experiences: experiences,
+      github_url: githubLink,
+      linkedin_url: linkedinLink,
+      file_path: data.resume_url || data.file_path || '',
+    });
+
+    setFormData({
+      name: data.name || '',
+      email: data.email || '',
+      domain: data.domain || '',
+      year_of_study: (data.year_of_study || data.year)?.toString() || '',
+      github_url: githubLink,
+      linkedin_url: linkedinLink,
+      experiences: experiences,
+      achievements: achievements,
+      skills: skills,
+      resume_url: data.resume_url || data.file_path || '',
+    });
+  };
+
   useEffect(() => {
-    // Read parsed data from localStorage
-    const parsed = localStorage.getItem('parsed_resume');
-    if (parsed) {
-      const data = JSON.parse(parsed);
-      setParsedData({
-        id: data.id || '',
-        name: data.name || '',
-        email: data.email || '',
-        skills: data.skills || [],
-        domain: data.domain || '',
-        year: data.year || undefined,
-        achievements: data.achievements || [],
-        experiences: data.experiences || [],
-        github_url: data.github_url || '',
-        linkedin_url: data.linkedin_url || '',
-        resume_url: data.resume_url || '',
-      });
-      setFormData({
-        name: data.name || '',
-        email: data.email || '',
-        domain: data.domain || '',
-        year_of_study: data.year?.toString() || '',
-        github_url: data.github_url ? (data.github_url.startsWith('http') ? data.github_url : `https://${data.github_url}`) : '',
-        linkedin_url: data.linkedin_url ? (data.linkedin_url.startsWith('http') ? data.linkedin_url : `https://${data.linkedin_url}`) : '',
-        experiences: data.experiences || [],
-        achievements: data.achievements || [],
-        resume_url: data.resume_url || '',
-      });
-      setLoading(false);
+    const editMode = searchParams.get('edit') === 'true';
+    const memberId = searchParams.get('memberId');
+    
+    setIsEditMode(editMode);
+    setExistingMemberId(memberId);
+
+    if (editMode && memberId) {
+      // Load existing profile data for editing
+      loadExistingProfile(memberId);
     } else {
+      // Read parsed data from localStorage for new profile creation
+      const parsed = localStorage.getItem('parsed_resume');
+      if (parsed) {
+        const data = JSON.parse(parsed);
+        populateFormAndParsedData(data, data.id || '');
+        setLoading(false);
+      } else {
+        router.push('/upload');
+      }
+    }
+  }, [router, searchParams]);
+
+  const loadExistingProfile = async (memberId: string) => {
+    try {
+      // Fetch all data in parallel
+      const [
+        memberRes,
+        skillsRes,
+        experiencesRes,
+        achievementsRes,
+        linksRes,
+      ] = await Promise.all([
+        fetch(`/api/member/profile/${memberId}`),
+        fetch(`/api/member/skills/${memberId}`),
+        fetch(`/api/member/experience/${memberId}`),
+        fetch(`/api/member/achievements/${memberId}`),
+        fetch(`/api/member/links/${memberId}`),
+      ]);
+
+      if (!memberRes.ok) throw new Error('Failed to load member data');
+
+      const memberData = await memberRes.json();
+      const skillsData = await skillsRes.ok ? await skillsRes.json() : [];
+      const experiencesData = await experiencesRes.ok ? await experiencesRes.json() : [];
+      const achievementsData = await achievementsRes.ok ? await achievementsRes.json() : [];
+      const linksData = await linksRes.ok ? await linksRes.json() : [];
+
+      const combinedData = {
+        ...memberData,
+        skills: skillsData,
+        experiences: experiencesData,
+        achievements: achievementsData,
+        links: linksData,
+      };
+
+      populateFormAndParsedData(combinedData, memberId);
+
+      // Set existing profile picture if available
+      if (memberData.picture_url) {
+        setPicturePreview(memberData.picture_url);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading existing profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load existing profile data. Please try again.',
+        variant: 'destructive',
+      });
       router.push('/upload');
     }
-  }, [router]);
+  };
 
   const handleExperienceChange = (index: number, field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -160,6 +253,29 @@ export default function ConfirmPage() {
     }));
   };
 
+  const addSkill = () => {
+    setFormData(prev => ({
+      ...prev,
+      skills: [...prev.skills, '']
+    }));
+  };
+
+  const removeSkill = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSkillChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.map((skill, i) => 
+        i === index ? value : skill
+      )
+    }));
+  };
+
   const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -185,10 +301,10 @@ export default function ConfirmPage() {
     setSaving(true);
 
     try {
-      const memberId = localStorage.getItem('user_id');
+      const memberId = isEditMode ? existingMemberId : localStorage.getItem('user_id');
       if (!memberId) throw new Error('User ID not found');
 
-      let pictureUrl = '';
+      let pictureUrl = picturePreview || '';
       if (profilePicture) {
         const fileExt = profilePicture.name.split('.').pop();
         const fileName = `${memberId}-${Date.now()}.${fileExt}`;
@@ -205,78 +321,47 @@ export default function ConfirmPage() {
         pictureUrl = publicUrl;
       }
 
-      // 1. Create or update member
-      const memberPayload = {
-        id: memberId,
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        domain: formData.domain.trim(),
-        year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
-        picture_url: pictureUrl,
-        resume_url: formData.resume_url,
+      const payload = {
+        member: {
+          id: memberId,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          domain: formData.domain.trim(),
+          year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
+          picture_url: pictureUrl,
+          resume_url: formData.resume_url,
+        },
+        links: [
+          { name: 'GitHub', url: formData.github_url },
+          { name: 'LinkedIn', url: formData.linkedin_url }
+        ].filter(l => l.url),
+        skills: formData.skills.filter(s => s && s.trim()),
+        experiences: formData.experiences,
+        achievements: formData.achievements.filter(a => a && a.trim())
       };
-      console.log('Saving member data:', memberPayload);
-      
-      const memberRes = await fetch('/api/members', {
+
+      const res = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(memberPayload),
+        body: JSON.stringify(payload),
       });
-      const memberData = await memberRes.json();
-      if (!memberRes.ok) throw new Error(memberData.error || 'Failed to save member');
 
-      // 1.5. Save links (GitHub and LinkedIn)
-      const linksToSave = [];
-      if (formData.github_url) {
-        linksToSave.push({ name: 'GitHub', url: formData.github_url });
-      }
-      if (formData.linkedin_url) {
-        linksToSave.push({ name: 'LinkedIn', url: formData.linkedin_url });
-      }
-      if (linksToSave.length > 0) {
-        await fetch('/api/links', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ member_id: memberId, links: linksToSave }),
-        });
-      }
-
-      // 2. Save skills
-      if (parsedData?.skills?.length) {
-        await fetch('/api/member-skills', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ member_id: memberId, skills: parsedData.skills }),
-        });
-      }
-
-      // 3. Save experiences
-      if (parsedData?.experiences?.length) {
-        await fetch('/api/experiences', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ member_id: memberId, experiences: parsedData.experiences }),
-        });
-      }
-
-      // 4. Save achievements
-      if (parsedData?.achievements?.length) {
-        await fetch('/api/achievements', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ member_id: memberId, achievements: parsedData.achievements }),
-        });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to save profile');
       }
 
       toast({
-        title: 'Profile created successfully',
-        description: 'Your profile has been created and is now visible in the directory.',
+        title: isEditMode ? 'Profile updated successfully' : 'Profile created successfully',
+        description: isEditMode 
+          ? 'Your profile has been updated.'
+          : 'Your profile has been created.',
       });
       router.push(`/profile/${memberId}`);
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create profile. Please try again.',
+        description: error.message || `Failed to ${isEditMode ? 'update' : 'create'} profile. Please try again.`,
         variant: 'destructive',
       });
     } finally {
@@ -384,16 +469,20 @@ export default function ConfirmPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="year">Year of Study</Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={4 - Number(formData.year_of_study)}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, year_of_study: e.target.value }))
-                    }
-                  />
+                  <Select
+                    value={formData.year_of_study}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, year_of_study: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year of study" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -427,21 +516,39 @@ export default function ConfirmPage() {
             <Separator />
 
             {/* Skills Section */}
-            {parsedData?.skills && parsedData.skills.length > 0 && (
-              <div className="space-y-2">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
                 <Label>Skills</Label>
-                <div className="flex flex-wrap gap-2">
-                  {parsedData.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2 py-1 bg-muted rounded-md text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSkill}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Skill
+                </Button>
               </div>
-            )}
+              <div className="space-y-2">
+                {formData.skills.map((skill, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={skill}
+                      onChange={(e) => handleSkillChange(index, e.target.value)}
+                      placeholder="Enter your skill"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSkill(index)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <Separator />
 
@@ -584,7 +691,10 @@ export default function ConfirmPage() {
               Back
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Creating Profile..." : "Create Profile"}
+              {saving 
+                ? (isEditMode ? "Updating Profile..." : "Creating Profile...") 
+                : (isEditMode ? "Update Profile" : "Create Profile")
+              }
             </Button>
           </CardFooter>
         </Card>

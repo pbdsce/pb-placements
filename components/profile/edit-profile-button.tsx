@@ -15,7 +15,7 @@ export function EditProfileButton({ memberId }: EditProfileButtonProps) {
     <Button
       variant="outline"
       className="gap-2"
-      onClick={() => router.push(`/profile/${memberId}/edit`)}
+      onClick={() => router.push(`/upload/confirm?edit=true&memberId=${memberId}`)}
     >
       <Pencil className="h-4 w-4" />
       Edit Profile

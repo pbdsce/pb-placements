@@ -257,32 +257,39 @@ export const SkillService = {
   },
   
   async getOrCreateSkill(name: string) {
-    // Try to get existing skill
-    const { data: existingSkill } = await supabase
+    name = name.trim();
+    if (!name) return null;
+
+    let { data: skill } = await supabase
       .from('skills')
-      .select('*')
-      .eq('name', name)
+      .select('id')
+      .ilike('name', name)
       .single();
+
+    if (!skill) {
+      const { data: newSkill, error } = await supabase
+        .from('skills')
+        .insert({ name })
+        .select('id')
+        .single();
+      if (error) throw error;
+      skill = newSkill;
+    }
     
-    if (existingSkill) return existingSkill;
-    
-    // Create new skill if it doesn't exist
-    const { data: newSkill, error } = await supabase
-      .from('skills')
-      .insert([{ name }])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return newSkill;
+    return skill.id;
   },
   
   async addSkillToMember(memberId: string, skillId: string) {
+    if (!memberId || !skillId) return false;
+    
     const { error } = await supabase
       .from('member_skills')
-      .insert([{ member_id: memberId, skill_id: skillId }]);
+      .insert({ member_id: memberId, skill_id: skillId });
     
-    return !error;
+    if (error && error.code !== '23505') { // Ignore duplicate key errors
+      throw error;
+    }
+    return true;
   },
   
   async removeSkillFromMember(memberId: string, skillId: string) {
@@ -291,18 +298,25 @@ export const SkillService = {
       .delete()
       .eq('member_id', memberId)
       .eq('skill_id', skillId);
-    
-    return !error;
+    if (error) throw error;
   },
   
   async getMemberSkills(memberId: string) {
     const { data, error } = await supabase
       .from('member_skills')
-      .select('skill_id, skills(name)')
+      .select('skills(id, name)')
       .eq('member_id', memberId);
     
-    if (error) return [];
-    return data?.map((ms: any) => ({ id: ms.skill_id, name: ms.skills?.name })) || [];
+    if (error) throw error;
+    return data?.map((item: any) => item.skills) || [];
+  },
+
+  async removeSkillsByMemberId(memberId: string) {
+    const { error } = await supabase
+      .from('member_skills')
+      .delete()
+      .eq('member_id', memberId);
+    if (error) throw error;
   }
 };
 
@@ -314,9 +328,8 @@ export const AchievementService = {
       .select('*')
       .eq('member_id', memberId)
       .order('date', { ascending: false });
-    
-    if (error) return [];
-    return data || [];
+    if (error) throw error;
+    return data;
   },
   
   async createAchievement(achievement: Omit<Achievement, 'id' | 'created_at'>) {
@@ -325,9 +338,24 @@ export const AchievementService = {
       .insert([achievement])
       .select()
       .single();
-    
     if (error) throw error;
     return data;
+  },
+  
+  async deleteAchievement(achievementId: string) {
+    const { error } = await supabase
+      .from('achievements')
+      .delete()
+      .eq('id', achievementId);
+    if (error) throw error;
+  },
+
+  async removeAchievementsByMemberId(memberId: string) {
+    const { error } = await supabase
+      .from('achievements')
+      .delete()
+      .eq('member_id', memberId);
+    if (error) throw error;
   }
 };
 
@@ -337,12 +365,9 @@ export const ExperienceService = {
     const { data, error } = await supabase
       .from('experiences')
       .select('*')
-      .eq('member_id', memberId)
-      .order('is_current', { ascending: false })
-      .order('start_date', { ascending: false });
-    
-    if (error) return [];
-    return data || [];
+      .eq('member_id', memberId);
+    if (error) throw error;
+    return data;
   },
   
   async createExperience(experience: Omit<Experience, 'id' | 'created_at'>) {
@@ -351,9 +376,16 @@ export const ExperienceService = {
       .insert([experience])
       .select()
       .single();
-    
     if (error) throw error;
     return data;
+  },
+
+  async removeExperiencesByMemberId(memberId: string) {
+    const { error } = await supabase
+      .from('experiences')
+      .delete()
+      .eq('member_id', memberId);
+    if (error) throw error;
   }
 };
 
@@ -364,9 +396,8 @@ export const LinkService = {
       .from('links')
       .select('*')
       .eq('member_id', memberId);
-    
-    if (error) return [];
-    return data || [];
+    if (error) throw error;
+    return data;
   },
   
   async createLink(link: Omit<Link, 'id' | 'created_at'>) {
@@ -375,9 +406,15 @@ export const LinkService = {
       .insert([link])
       .select()
       .single();
-    
     if (error) throw error;
     return data;
+  },
+
+  async removeLinksByMemberId(memberId: string) {
+    const { error } = await supabase
+      .from('links')
+      .delete()
+      .eq('member_id', memberId);
+    if (error) throw error;
   }
 };
-

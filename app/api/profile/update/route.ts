@@ -1,88 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MemberService, SkillService, AchievementService } from '@/lib/db';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { MemberService, SkillService, ExperienceService, AchievementService, LinkService } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const data = await request.json();
-    const { 
-      id, 
-      name, 
-      email, 
-      domain, 
-      year, 
-      skills = [], 
-      achievements = [] 
-    } = data;
+    const {
+      member,
+      skills,
+      experiences,
+      achievements,
+      links,
+    } = await req.json();
+
+    // 1. Upsert Member
+    const { id, ...memberData } = member;
+    await MemberService.updateMember(id, memberData);
     
-    // Check if user exists
-    let member = await MemberService.getMemberById(id);
-    
-    if (member) {
-      // Update existing member
-      member = await MemberService.updateMember(id, {
-        name,
-        email,
-        domain,
-        year_of_study: Number(year),
-      });
-    } else {
-      // Create new member
-      member = await MemberService.createMember({
-        name,
-        email,
-        domain,
-        year_of_study: Number(year),
-        picture_url: '',
-        resume_url: '',
-      });
+    // 2. Clear and re-insert skills
+    await SkillService.removeSkillsByMemberId(id);
+    if (skills && skills.length > 0) {
+      const skillIds = await Promise.all(
+        skills.map((name: string) => SkillService.getOrCreateSkill(name))
+      );
+      await Promise.all(
+        skillIds.map(skillId => SkillService.addSkillToMember(id, skillId))
+      );
+    }
+
+    // 3. Clear and re-insert experiences
+    await ExperienceService.removeExperiencesByMemberId(id);
+    if (experiences && experiences.length > 0) {
+      await Promise.all(
+        experiences.map((exp: any) => ExperienceService.createExperience({ ...exp, member_id: id }))
+      );
     }
     
-    // Process skills
-    // 1. Get existing skills for member
-    const existingSkills = await SkillService.getMemberSkills(member.id);
-    const existingSkillNames = existingSkills.map(skill => skill.name);
-    
-    // 2. Add new skills
-    for (const skillName of skills) {
-      if (!existingSkillNames.includes(skillName)) {
-        const skill = await SkillService.getOrCreateSkill(skillName);
-        await SkillService.addSkillToMember(member.id, skill.id);
-      }
+    // 4. Clear and re-insert achievements
+    await AchievementService.removeAchievementsByMemberId(id);
+    if (achievements && achievements.length > 0) {
+      await Promise.all(
+        achievements.map((desc: string) => AchievementService.createAchievement({ 
+          member_id: id, 
+          description: desc,
+          title: 'Achievement', // title is required, but not used in the UI
+          date: new Date() 
+        }))
+      );
     }
     
-    // 3. Remove skills that are no longer associated
-    for (const existingSkill of existingSkills) {
-      if (!skills.includes(existingSkill.name)) {
-        await SkillService.removeSkillFromMember(member.id, existingSkill.id);
-      }
+    // 5. Clear and re-insert links
+    await LinkService.removeLinksByMemberId(id);
+    if (links && links.length > 0) {
+      await Promise.all(
+        links.map((link: any) => LinkService.createLink({ ...link, member_id: id }))
+      );
     }
-    
-    // Process achievements
-    // Delete existing achievements (for simplicity)
-    // In a real app, you might want to update existing ones instead
-    const existingAchievements = await AchievementService.getMemberAchievements(member.id);
-    
-    // Add new achievements
-    for (const achievementTitle of achievements) {
-      await AchievementService.createAchievement({
-        member_id: member.id,
-        title: achievementTitle,
-        description: '',
-        date: new Date(),
-      });
-    }
-    
-    return NextResponse.json({ 
-      success: true,
-      id: member.id,
-      message: 'Profile updated successfully' 
-    });
+
+    // 6. Revalidate cache for the profile page
+    revalidatePath(`/profile/${id}`);
+
+    return NextResponse.json({ message: 'Profile updated successfully' });
+
   } catch (error) {
     console.error('Error updating profile:', error);
-    
-    return NextResponse.json(
-      { success: false, message: 'Failed to update profile' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
   }
 }
