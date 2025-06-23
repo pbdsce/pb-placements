@@ -13,9 +13,9 @@ import {
 // This handles GET requests for each type
 export async function GET(
   request: NextRequest,
-  { params }: { params: { type: string; id: string } }
+  { params }: { params: Promise<{ type: string; id: string }> }
 ) {
-  const { type, id } = params;
+  const { type, id } = await params;
 
   try {
     switch (type) {
@@ -57,9 +57,9 @@ export async function GET(
 // This handles DELETE for achievements 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { type: string; id: string } }
+  { params }: { params: Promise<{ type: string; id: string }> }
 ) {
-  const { type, id } = params;
+  const { type, id } = await params;
 
   if (type !== 'achievements') {
     return NextResponse.json({ error: 'DELETE not supported for this type' }, { status: 405 });

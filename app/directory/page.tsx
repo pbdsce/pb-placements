@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchFilters } from "@/components/directory/search-filters";
 import { MemberCard } from "@/components/directory/member-card";
@@ -33,7 +33,7 @@ const convertYearToString = (year: number): string => {
   return 'Alumni';
 };
 
-export default function DirectoryPage() {
+function DirectoryContent() {
   const searchParams = useSearchParams();
   
   // State for members data
@@ -208,5 +208,45 @@ export default function DirectoryPage() {
         clearSelections={clearSelections}
       />
     </div>
+  );
+}
+
+function DirectoryLoading() {
+  return (
+    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Developer Directory</h1>
+          <p className="text-muted-foreground">
+            Search and filter through our community of talented developers.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="selection-mode" disabled />
+            <Label htmlFor="selection-mode">Selection Mode</Label>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mb-8">
+        <div className="h-16 bg-muted rounded animate-pulse"></div>
+      </div>
+      
+      <div className="flex justify-center py-12">
+        <div className="animate-pulse text-center">
+          <div className="h-6 w-32 bg-muted rounded mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Loading directory...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DirectoryPage() {
+  return (
+    <Suspense fallback={<DirectoryLoading />}>
+      <DirectoryContent />
+    </Suspense>
   );
 }

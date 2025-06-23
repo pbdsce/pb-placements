@@ -19,13 +19,14 @@ import { EditProfileButton } from "@/components/profile/edit-profile-button";
 import { ToastProvider } from "@/components/ui/toast";
 
 interface ProfilePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
-  const member = await MemberService.getMemberById(params.id);
+  const { id } = await params;
+  const member = await MemberService.getMemberById(id);
   
   if (!member) {
     return {
@@ -40,10 +41,11 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
   
-  const member = await MemberService.getMemberById(params.id);
+  const member = await MemberService.getMemberById(id);
   
   if (!member) {
     notFound();
@@ -52,10 +54,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   console.log('Member data:', member); // Debug log
   
   // Fetch additional profile data
-  const skills = await SkillService.getMemberSkills(params.id);
-  const experiences = await ExperienceService.getMemberExperiences(params.id);
-  const achievements = await AchievementService.getMemberAchievements(params.id);
-  const links = await LinkService.getMemberLinks(params.id);
+  const skills = await SkillService.getMemberSkills(id);
+  const experiences = await ExperienceService.getMemberExperiences(id);
+  const achievements = await AchievementService.getMemberAchievements(id);
+  const links = await LinkService.getMemberLinks(id);
   
   const isCurrentUser = user?.id === member.id;
   

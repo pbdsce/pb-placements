@@ -11,14 +11,14 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/upload', '/profile/edit'];
+  const protectedRoutes = ['/profile/edit'];
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   );
 
   // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/auth/sign-in', request.url);
+    const redirectUrl = new URL('/auth/email-link-sign-in', request.url);
     redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
@@ -33,7 +33,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/upload/:path*',
     '/profile/edit/:path*',
     '/auth/:path*'
   ],

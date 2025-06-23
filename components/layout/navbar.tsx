@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Code2, Search, Upload, User, Menu } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuthStore } from "@/lib/authStore";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,29 +21,16 @@ import { useEffect, useState } from "react";
 import Logo from "../ui/logo"; 
 
 export function Navbar() {
-  const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
-  const supabase = createClientComponentClient();
-  const [user, setUser] = useState<any>(null);
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    
-    getUser();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    useAuthStore.getState().setUser(null);
+    localStorage.clear();
+    sessionStorage.clear();
     router.push("/");
   };
   
@@ -65,27 +54,11 @@ export function Navbar() {
         >
           Directory
         </Link>
-        {user && (
-          <Link 
-            href="/upload"
-            className={cn(
-              "transition-colors hover:text-foreground/80",
-              pathname === "/upload" ? "text-foreground" : "text-foreground/60"
-            )}
-          >
-            Upload Resume
-          </Link>
-        )}
-      </div>
+        </div>
 
       {/* Desktop right-side buttons */}
       <div className="hidden md:flex items-center space-x-4">
-        <Link href="/directory">
-          <Button variant="outline" size="sm" className="gap-1">
-            <Search className="h-4 w-4" />
-            <span className="hidden sm:inline">Search Talent</span>
-          </Button>
-        </Link>
+        <Link href="/directory"></Link>
 
         {user ? (
           <>
@@ -114,14 +87,8 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Button variant="ghost" onClick={() => router.push("/auth/sign-in")}>
+            <Button className="bg-green-500 hover:bg-green-600" onClick={() => router.push("/auth/email-link-sign-in")}>
               Sign In
-            </Button>
-            <Button 
-              className="bg-green-500 hover:bg-green-600"
-              onClick={() => router.push("/auth/sign-up")}
-            >
-              Sign Up
             </Button>
           </>
         )}
@@ -183,11 +150,8 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/auth/sign-in")}>
+            <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/auth/email-link-sign-in")}>
               Sign In
-            </Button>
-            <Button className="bg-green-500 hover:bg-green-600 w-full justify-start" onClick={() => router.push("/auth/sign-up")}>
-              Sign Up
             </Button>
           </>
         )}
@@ -195,5 +159,5 @@ export function Navbar() {
       </div>
     )}
   </header>
-);
+ );
 }

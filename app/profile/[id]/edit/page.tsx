@@ -4,13 +4,14 @@ import { cookies } from "next/headers";
 import { MemberService } from "@/lib/db";
 
 interface EditProfilePageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function EditProfilePage({ params }: EditProfilePageProps) {
+  const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
-  const member = await MemberService.getMemberById(params.id);
+  const member = await MemberService.getMemberById(id);
 
   if (!member || user?.id !== member.id) {
     notFound();
@@ -65,4 +66,4 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
       </form>
     </div>
   );
-} 
+}

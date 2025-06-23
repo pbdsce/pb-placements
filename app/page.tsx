@@ -1,12 +1,44 @@
-import { HeroSection } from '@/components/home/hero-section';
-import { FeaturesSection } from '@/components/home/features-section';
+"use client";
+import { useEffect, Suspense } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuthStore } from "@/lib/authStore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { HeroSection } from "@/components/home/hero-section";
+import { FeaturesSection } from "@/components/home/features-section";
 
-export const metadata = {
-  title: "Student discovery system | Point Blank",
-  description: "Upload your resume to create or update your profile on Point Blank",
-};
+function AuthHandler() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-export default function UploadPage() {
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      supabase.auth
+        .exchangeCodeForSession(code)
+        .then(async ({ data, error }) => {
+          if (error) {
+            console.error("Exchange error:", error);
+          }
+          const { session } = data;
+          if (session) {
+            useAuthStore.getState().setUser(session.user);
+            router.replace(window.location.pathname);
+          }
+        });
+    } else {
+      
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          useAuthStore.getState().setUser(session.user);
+        }
+      });
+    }
+  }, [router, searchParams]);
+
+  return null;
+}
+
+function PageContent() {
   return (
     <div className="py-8 md:py-12">
       {/* <div className="mb-8 text-center">
@@ -19,5 +51,27 @@ export default function UploadPage() {
       <HeroSection />
       <FeaturesSection />
     </div>
+  );
+}
+
+function PageLoading() {
+  return (
+    <div className="container py-8 md:py-12">
+      <div className="animate-pulse">
+        <div className="h-32 bg-muted rounded mb-8"></div>
+        <div className="h-64 bg-muted rounded"></div>
+      </div>
+    </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <>
+      <Suspense fallback={null}>
+        <AuthHandler />
+      </Suspense>
+      <PageContent />
+    </>
   );
 }
