@@ -73,16 +73,6 @@ export function AchievementSection({
                 )}
               </div>
             </div>
-            {isEditable && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(achievement.id)}
-                className="shrink-0"
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         ))}
       </div>
