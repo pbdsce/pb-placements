@@ -19,12 +19,16 @@ export async function POST(request: NextRequest) {
     });
     
     console.log('Upserted member:', member); // Debug log
-    
-    return NextResponse.json(member);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Member upserted successfully.',
+      member,
+    });
   } catch (error) {
     console.error('Error upserting member:', error);
     return NextResponse.json(
-      { error: 'Failed to upsert member' },
+      { success: false, error: 'Failed to upsert member.' },
       { status: 500 }
     );
   }

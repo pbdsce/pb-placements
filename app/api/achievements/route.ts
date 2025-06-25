@@ -11,17 +11,34 @@ export async function POST(request: NextRequest) {
   try {
     const { member_id, achievements } = await request.json();
     if (!member_id || !Array.isArray(achievements)) {
-      return NextResponse.json({ success: false, error: 'Invalid payload' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid payload: member_id and achievements array required.' },
+        { status: 400 }
+      );
     }
+
     for (const title of achievements) {
-      await supabase.from('achievements').insert({
+      const { error } = await supabase.from('achievements').insert({
         id: uuidv4(),
         member_id,
         title,
       });
+      if (error) {
+        return NextResponse.json(
+          { success: false, error: `Failed to insert achievement: ${error.message}` },
+          { status: 500 }
+        );
+      }
     }
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json(
+      { success: true, message: 'Achievements inserted successfully.' },
+      { status: 201 }
+    );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: `Server error: ${error.message}` },
+      { status: 500 }
+    );
   }
-} 
+}
