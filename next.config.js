@@ -5,7 +5,7 @@ const nextConfig = {
   },
   images: { unoptimized: true },
   experimental: {
-    serverComponentsExternalPackages: ['tesseract.js'],
+    serverComponentsExternalPackages: ['pdf-parse', 'tesseract.js'],
   },
   webpack: (config, { isServer }) => {
     // Disable webpack caching to prevent ENOENT errors
