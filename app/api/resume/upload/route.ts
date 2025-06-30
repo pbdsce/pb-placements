@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -56,20 +57,14 @@ export async function POST(request: NextRequest) {
 
     const publicResumeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/resume/${data.path}`;
 
-    // Parse the resume
     const extractedText = await extractTextFromPDF(fileBuffer);
     const parsedData = await analyzeWithGemini(extractedText);
 
-    // Add resume_url to parsed data
     parsedData.resume_url = publicResumeUrl;
-
-    const uploadId = uuidv4();
-
-    
 
     return NextResponse.json({
       success: true,
-      id: uploadId,
+      id: uuidv4(),
       file_path: data.path,
       ...parsedData,
     });

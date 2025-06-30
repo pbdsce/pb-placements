@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabaseClient";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
 type AuthState = {
   user: SupabaseUser | null;
@@ -13,10 +13,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 }));
 
 export const initAuthListener = () => {
+
   supabase.auth.getSession().then(({ data: { session } }) => {
     useAuthStore.getState().setUser(session?.user ?? null);
   });
-  supabase.auth.onAuthStateChange((_event, session) => {
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
     useAuthStore.getState().setUser(session?.user ?? null);
+
+    await fetch("/api/callback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ event, session }),
+    });
   });
 };

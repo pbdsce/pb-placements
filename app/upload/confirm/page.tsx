@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import {
   Select,
   SelectContent,
@@ -49,11 +50,6 @@ interface ParsedData {
   linkedin_url?: string;
   file_path?: string;
 }
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
 
 function ConfirmPageContent() {
   const router = useRouter();
@@ -125,15 +121,13 @@ function ConfirmPageContent() {
   useEffect(() => {
     const editMode = searchParams.get('edit') === 'true';
     const memberId = searchParams.get('memberId');
-    
+
     setIsEditMode(editMode);
     setExistingMemberId(memberId);
 
     if (editMode && memberId) {
-      // Load existing profile data for editing
       loadExistingProfile(memberId);
     } else {
-      // Read parsed data from localStorage for new profile creation
       const parsed = localStorage.getItem('parsed_resume');
       if (parsed) {
         const data = JSON.parse(parsed);
@@ -147,7 +141,6 @@ function ConfirmPageContent() {
 
   const loadExistingProfile = async (memberId: string) => {
     try {
-      // Fetch all data in parallel
       const [
         memberRes,
         skillsRes,
@@ -179,8 +172,6 @@ function ConfirmPageContent() {
       };
 
       populateFormAndParsedData(combinedData, memberId);
-
-      // Set existing profile picture if available
       if (memberData.picture_url) {
         setPicturePreview(memberData.picture_url);
       }
@@ -200,7 +191,7 @@ function ConfirmPageContent() {
   const handleExperienceChange = (index: number, field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
-      experiences: prev.experiences.map((exp, i) => 
+      experiences: prev.experiences.map((exp, i) =>
         i === index ? { ...exp, [field]: value } : exp
       )
     }));
@@ -209,7 +200,7 @@ function ConfirmPageContent() {
   const handleAchievementChange = (index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      achievements: prev.achievements.map((achievement, i) => 
+      achievements: prev.achievements.map((achievement, i) =>
         i === index ? value : achievement
       )
     }));
@@ -270,7 +261,7 @@ function ConfirmPageContent() {
   const handleSkillChange = (index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      skills: prev.skills.map((skill, i) => 
+      skills: prev.skills.map((skill, i) =>
         i === index ? value : skill
       )
     }));
@@ -296,78 +287,88 @@ function ConfirmPageContent() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSaving(true);
 
-    try {
-      const memberId = isEditMode ? existingMemberId : localStorage.getItem('user_id');
-      if (!memberId) throw new Error('User ID not found');
+  try {
+    const supabase = createClientComponentClient();
+    const { data: { session }, error } = await supabase.auth.getSession();
 
-      let pictureUrl = picturePreview || '';
-      if (profilePicture) {
-        const fileExt = profilePicture.name.split('.').pop();
-        const fileName = `${memberId}-${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(fileName, profilePicture);
+    if (!session || !session.user) throw new Error("Not authenticated");
 
-        if (uploadError) throw new Error('Failed to upload profile picture');
+    const token = session.access_token;
+    const memberId = isEditMode ? existingMemberId : session.user.id;
+    if (!memberId) throw new Error("User ID not found");
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('profile-pictures')
-          .getPublicUrl(fileName);
-        
-        pictureUrl = publicUrl;
-      }
+    let pictureUrl = picturePreview || '';
+    if (profilePicture) {
+      const fileExt = profilePicture.name.split('.').pop();
+      const fileName = `${memberId}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(fileName, profilePicture);
 
-      const payload = {
-        member: {
-          id: memberId,
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          domain: formData.domain.trim(),
-          year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
-          picture_url: pictureUrl,
-          resume_url: formData.resume_url,
-        },
-        links: [
-          { name: 'GitHub', url: formData.github_url },
-          { name: 'LinkedIn', url: formData.linkedin_url }
-        ].filter(l => l.url),
-        skills: formData.skills.filter(s => s && s.trim()),
-        experiences: formData.experiences,
-        achievements: formData.achievements.filter(a => a && a.trim())
-      };
+      if (uploadError) throw new Error('Failed to upload profile picture');
 
-      const res = await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(fileName);
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to save profile');
-      }
-
-      toast({
-        title: isEditMode ? 'Profile updated successfully' : 'Profile created successfully',
-        description: isEditMode 
-          ? 'Your profile has been updated.'
-          : 'Your profile has been created.',
-      });
-      router.push(`/profile/${memberId}`);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || `Failed to ${isEditMode ? 'update' : 'create'} profile. Please try again.`,
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
+      pictureUrl = publicUrl;
     }
-  };
+
+    const payload = {
+      member: {
+        id: memberId,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        domain: formData.domain.trim(),
+        year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
+        picture_url: pictureUrl,
+        resume_url: formData.resume_url,
+      },
+      links: [
+        { name: 'GitHub', url: formData.github_url },
+        { name: 'LinkedIn', url: formData.linkedin_url }
+      ].filter(l => l.url),
+      skills: formData.skills.filter(s => s && s.trim()),
+      experiences: formData.experiences,
+      achievements: formData.achievements.filter(a => a && a.trim())
+    };
+
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,   
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to save profile');
+    }
+
+    toast({
+      title: isEditMode ? 'Profile updated successfully' : 'Profile created successfully',
+      description: isEditMode
+        ? 'Your profile has been updated.'
+        : 'Your profile has been created.',
+    });
+
+    router.push(`/profile/${memberId}`);
+  } catch (error: any) {
+    toast({
+      title: 'Error',
+      description: error.message || `Failed to ${isEditMode ? 'update' : 'create'} profile. Please try again.`,
+      variant: 'destructive',
+    });
+  } finally {
+    setSaving(false);
+  }
+};
 
   if (loading) {
     return <div>Loading...</div>;
@@ -394,7 +395,7 @@ function ConfirmPageContent() {
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="font-medium">Basic Information</h3>
-              
+
               {/* Profile Picture Upload */}
               <div className="flex items-start gap-4 mb-4">
                 <div className="flex-1">
@@ -620,7 +621,7 @@ function ConfirmPageContent() {
                                 <Checkbox
                                   id={`current-${index}`}
                                   checked={exp.is_current}
-                                  onCheckedChange={(checked) => 
+                                  onCheckedChange={(checked) =>
                                     handleExperienceChange(index, 'is_current', checked as boolean)
                                   }
                                 />
@@ -691,8 +692,8 @@ function ConfirmPageContent() {
               Back
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving 
-                ? (isEditMode ? "Updating Profile..." : "Creating Profile...") 
+              {saving
+                ? (isEditMode ? "Updating Profile..." : "Creating Profile...")
                 : (isEditMode ? "Update Profile" : "Create Profile")
               }
             </Button>

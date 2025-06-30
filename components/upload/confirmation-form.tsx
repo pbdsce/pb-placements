@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useAuthStore } from "@/lib/authStore";
 import {
   Card,
   CardContent,
@@ -23,13 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ParsedData {
-  id: string;
-  name: string;
-  email: string;
+  id?: string;
+  name?: string;
+  email?: string;
   domain?: string;
   year?: number;
   skills: string[];
@@ -41,141 +42,135 @@ interface ConfirmationFormProps {
 }
 
 export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
+  const userFromStore = useAuthStore((state) => state.user);
   const router = useRouter();
   const { toast } = useToast();
-  
-  // Form state
+
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserId(user.id);
+      }
+      else console.error("No session found", error);
+    };
+
+    getUser();
+  }, []);
+
   const [formData, setFormData] = useState({
-    name: parsedData.name || "",
-    email: parsedData.email || "",
+    name: parsedData.name || userFromStore?.user_metadata?.full_name || "",
+    email: parsedData.email || userFromStore?.email || "",
     domain: parsedData.domain || "",
     year: parsedData.year || 1,
     skills: parsedData.skills || [],
     achievements: parsedData.achievements || [],
   });
-  
-  // New skill/achievement input state
+
   const [newSkill, setNewSkill] = useState("");
   const [newAchievement, setNewAchievement] = useState("");
-  
-  // Loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
-  // Handle select changes
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
-  // Add new skill
+
   const handleAddSkill = () => {
-    if (newSkill.trim() === "") return;
-    
-    if (!formData.skills.includes(newSkill)) {
-      setFormData((prev) => ({
-        ...prev,
-        skills: [...prev.skills, newSkill],
-      }));
-    }
-    
+    if (newSkill.trim() === "" || formData.skills.includes(newSkill)) return;
+    setFormData((prev) => ({
+      ...prev,
+      skills: [...prev.skills, newSkill],
+    }));
     setNewSkill("");
   };
-  
-  // Remove skill
+
   const handleRemoveSkill = (skill: string) => {
     setFormData((prev) => ({
       ...prev,
       skills: prev.skills.filter((s) => s !== skill),
     }));
   };
-  
-  // Add new achievement
+
   const handleAddAchievement = () => {
     if (newAchievement.trim() === "") return;
-    
     setFormData((prev) => ({
       ...prev,
       achievements: [...prev.achievements, newAchievement],
     }));
-    
     setNewAchievement("");
   };
-  
-  // Remove achievement
+
   const handleRemoveAchievement = (achievement: string) => {
     setFormData((prev) => ({
       ...prev,
       achievements: prev.achievements.filter((a) => a !== achievement),
     }));
   };
-  
-  // Submit form
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    const payload = {
+      id: userId,
+      name: formData.name,
+      email: formData.email,
+      domain: formData.domain,
+      year: formData.year,
+      skills: formData.skills,
+      achievements: formData.achievements,
+    };
+
     try {
       const response = await fetch('/api/profile/update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: parsedData.id,
-          ...formData,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to update profile');
       }
-      
+
       const data = await response.json();
-      
+
       toast({
         title: "Profile updated successfully",
-        description: "Your profile has been created/updated. Redirecting to your profile page...",
+        description: "Your profile has been created/updated. Redirecting...",
       });
-      
-      // Redirect to profile page
+
       setTimeout(() => {
-        router.push(`/profile/${data.id}`);
+        router.push(`/profile/${data.id || userId}`);
       }, 1500);
-      
     } catch (error) {
       toast({
         title: "Update failed",
         description: "There was an error updating your profile. Please try again.",
         variant: "destructive",
       });
-      
       setIsSubmitting(false);
     }
   };
-  
-  // Common domains for dropdown
+
   const domains = [
-    "Frontend Development",
-    "Backend Development",
-    "Full Stack Development",
-    "Mobile Development",
-    "iOS Development",
-    "Android Development",
-    "Game Development",
-    "DevOps",
-    "Cloud Engineering",
-    "Data Science",
-    "Machine Learning",
-    "UI/UX Design",
-    "Cybersecurity",
-    "Blockchain Development",
+    "Frontend Development", "Backend Development", "Full Stack Development",
+    "Mobile Development", "iOS Development", "Android Development",
+    "Game Development", "DevOps", "Cloud Engineering",
+    "Data Science", "Machine Learning", "UI/UX Design",
+    "Cybersecurity", "Blockchain Development",
   ];
-  
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl mx-auto">
       <Card>
@@ -245,9 +240,9 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
               </Select>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <div className="space-y-4">
             <Label>Skills</Label>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -291,9 +286,9 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
               </Button>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <div className="space-y-4">
             <Label>Achievements</Label>
             <div className="space-y-2 mb-3">
