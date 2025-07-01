@@ -126,17 +126,60 @@ function ConfirmPageContent() {
     setExistingMemberId(memberId);
 
     if (editMode && memberId) {
-      loadExistingProfile(memberId);
-    } else {
+    loadExistingProfile(memberId);
+  } else {
+    try {
+      const encodedData = searchParams?.get('data');
+      if (encodedData) {
+        const decodedData = decodeURIComponent(encodedData);
+        const parsedData = JSON.parse(atob(decodedData));
+        
+        const uploadTime = parsedData.uploadTimestamp;
+        const currentTime = Date.now();
+        if (currentTime - uploadTime > 5 * 60 * 1000) {
+          throw new Error('Session expired. Please upload your resume again.');
+        }
+        
+        populateFormAndParsedData(parsedData, parsedData.id || '');
+        setLoading(false);
+        return;
+      }
+
       const parsed = localStorage.getItem('parsed_resume');
       if (parsed) {
         const data = JSON.parse(parsed);
         populateFormAndParsedData(data, data.id || '');
         setLoading(false);
-      } else {
-        router.push('/upload');
+        return;
       }
+
+      const tempStorage = document.getElementById('temp-resume-data');
+      if (tempStorage?.textContent) {
+        const parsedData = JSON.parse(tempStorage.textContent);
+        populateFormAndParsedData(parsedData, parsedData.id || '');
+        tempStorage.remove();
+        setLoading(false);
+        return;
+      }
+
+      throw new Error('No resume data found');
+
+    } catch (err) {
+      console.error('Resume loading error:', err);
+
+      const message = err instanceof Error
+        ? err.message
+        : 'Could not load resume data. Please re-upload your resume.';
+      
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+      
+      setTimeout(() => router.push('/upload'), 3000);
     }
+  }
   }, [router, searchParams]);
 
   const loadExistingProfile = async (memberId: string) => {

@@ -2,29 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { extractTextFromPDF, analyzeWithGemini } from '@/lib/resume-parser';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const supabase = createServerComponentClient({ cookies });
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!token) {
-      return NextResponse.json({ success: false, message: 'Unauthorized: No token' }, { status: 401 });
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (!user || authError) {
-      console.error('Auth error:', authError?.message);
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -43,13 +33,31 @@ export async function POST(request: NextRequest) {
     }
 
     const fileBuffer = await resumeFile.arrayBuffer();
-    const fileName = `resume/${user.id}-${Date.now()}-${resumeFile.name}`;
+    
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || user.id;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const userFolder = `resumes/${user.id}`;
+    const fileName = `${userFolder}/${username}_${timestamp}.pdf`;
+
+    const { data: existingFiles } = await supabase.storage
+      .from('resume')
+      .list(userFolder);
+
+    if (existingFiles && existingFiles.length >= 4) {
+      const sortedFiles = existingFiles.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      await supabase.storage
+        .from('resume')
+        .remove([`${userFolder}/${sortedFiles[0].name}`]);
+    }
 
     const { error: uploadError, data } = await supabase.storage
       .from('resume')
       .upload(fileName, Buffer.from(fileBuffer), {
         contentType: 'application/pdf',
-        upsert: true,
+        upsert: false,
       });
 
     if (uploadError || !data?.path) {
@@ -63,6 +71,7 @@ export async function POST(request: NextRequest) {
     const parsedData = await analyzeWithGemini(extractedText);
 
     parsedData.resume_url = publicResumeUrl;
+    parsedData.resume_filename = `${username}_${timestamp}.pdf`;
 
     return NextResponse.json({
       success: true,
