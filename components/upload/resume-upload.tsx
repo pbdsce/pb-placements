@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export function ResumeUpload() {
   const router = useRouter();
@@ -95,62 +96,74 @@ export function ResumeUpload() {
   };
   
   const handleUpload = async () => {
-    if (!file) return;
-    
-    setUploading(true);
-    setUploadProgress(0);
-    
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        const newProgress = prev + Math.random() * 10;
-        return newProgress > 90 ? 90 : newProgress;
-      });
-    }, 300);
-    
-    try {
-      const formData = new FormData();
-      formData.append('resume', file);
-      
-      const response = await fetch('/api/resume/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      clearInterval(progressInterval);
-      
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      setUploadProgress(100);
-      setUploadComplete(true);
-      
-      // Get the parsed data from the response
-      const data = await response.json();
-      
-      toast({
-        title: "Resume uploaded successfully",
-        description: "Your resume has been uploaded and parsed. Redirecting to confirmation page...",
-      });
-      
-      // Store parsed data in localStorage and redirect
-      localStorage.setItem('parsed_resume', JSON.stringify(data));
-      setTimeout(() => {
-        router.push('/upload/confirm');
-      }, 1500);
-      
-    } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: "There was an error uploading your resume. Please try again.",
-        variant: "destructive",
-      });
-      
-      setUploading(false);
-      clearInterval(progressInterval);
+  if (!file) return;
+
+  setUploading(true);
+  setUploadProgress(0);
+
+  const progressInterval = setInterval(() => {
+    setUploadProgress((prev) => {
+      const newProgress = prev + Math.random() * 10;
+      return newProgress > 90 ? 90 : newProgress;
+    });
+  }, 300);
+
+  try {
+    const supabase = createClientComponentClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session || !session.access_token) {
+      throw new Error("Not authenticated");
     }
-  };
+
+    const token = session.access_token;
+
+    const formData = new FormData();
+    formData.append("resume", file);
+
+    const response = await fetch("/api/resume/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+      body: formData,
+    });
+
+    clearInterval(progressInterval);
+
+    if (!response.ok) {
+      throw new Error("Upload failed");
+    }
+
+    setUploadProgress(100);
+    setUploadComplete(true);
+
+    const data = await response.json();
+
+    toast({
+      title: "Resume uploaded successfully",
+      description:
+        "Your resume has been uploaded and parsed. Redirecting to confirmation page...",
+    });
+
+    localStorage.setItem("parsed_resume", JSON.stringify(data));
+    setTimeout(() => {
+      router.push("/upload/confirm");
+    }, 1500);
+  } catch (error) {
+    toast({
+      title: "Upload failed",
+      description:
+        "There was an error uploading your resume. Please try again.",
+      variant: "destructive",
+    });
+
+    setUploading(false);
+    clearInterval(progressInterval);
+  }
+};
   
   const handleRemoveFile = () => {
     setFile(null);

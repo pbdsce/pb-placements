@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/lib/authStore";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Card,
   CardContent,
@@ -119,8 +120,18 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  try {
+    const supabase = createClientComponentClient();
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (!session || !session.access_token) {
+      throw new Error("Not authenticated");
+    }
+
+    const token = session.access_token;
 
     const payload = {
       id: userId,
@@ -132,36 +143,38 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
       achievements: formData.achievements,
     };
 
-    try {
-      const response = await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, 
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const data = await response.json();
-
-      toast({
-        title: "Profile updated successfully",
-        description: "Your profile has been created/updated. Redirecting...",
-      });
-
-      setTimeout(() => {
-        router.push(`/profile/${data.id || userId}`);
-      }, 1500);
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "There was an error updating your profile. Please try again.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
+    if (!response.ok) {
+      throw new Error('Failed to update profile');
     }
-  };
+
+    const data = await response.json();
+
+    toast({
+      title: "Profile updated successfully",
+      description: "Your profile has been created/updated. Redirecting...",
+    });
+
+    setTimeout(() => {
+      router.push(`/profile/${data.id || userId}`);
+    }, 1500);
+  } catch (error) {
+    toast({
+      title: "Update failed",
+      description: "There was an error updating your profile. Please try again.",
+      variant: "destructive",
+    });
+    setIsSubmitting(false);
+  }
+};
 
   const domains = [
     "Frontend Development", "Backend Development", "Full Stack Development",
