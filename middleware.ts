@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession();
 
   const protectedRoutes = [
-    '/profile',
+    '/profile/update',
     '/resume',
     '/members',
     '/experiences',
