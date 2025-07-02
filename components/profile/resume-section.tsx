@@ -120,8 +120,15 @@ export function ResumeSection({ resumeUrl, isEditable, userId }: ResumeSectionPr
       const formData = new FormData();
       formData.append('resume', file);
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch('/api/resume/upload', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: formData,
       });
 

@@ -8,8 +8,6 @@ import {
   LinkService,
 } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,40 +43,41 @@ export async function POST(req: NextRequest) {
       isUpdate = false
     } = await req.json();
 
-    const existingMember = await MemberService.getMemberById(member.id);
-    const memberExists = !!existingMember;
-
-    const memberData = { ...member };
+    const memberData = { ...member, id: user.id };
     if (resume_url) {
       memberData.resume_url = resume_url;
     }
+
+    const existingMember = await MemberService.getMemberById(user.id);
+    const memberExists = !!existingMember;
+
     await MemberService.upsertMember(memberData);
 
-    await SkillService.removeSkillsByMemberId(member.id);
+    await SkillService.removeSkillsByMemberId(user.id);
     if (skills && skills.length > 0) {
       const skillIds = await Promise.all(
         skills.map((name: string) => SkillService.getOrCreateSkill(name))
       );
       await Promise.all(
-        skillIds.map(skillId => SkillService.addSkillToMember(member.id, skillId))
+        skillIds.map(skillId => SkillService.addSkillToMember(user.id, skillId))
       );
     }
 
-    await ExperienceService.removeExperiencesByMemberId(member.id);
+    await ExperienceService.removeExperiencesByMemberId(user.id);
     if (experiences && experiences.length > 0) {
       await Promise.all(
         experiences.map((exp: any) =>
-          ExperienceService.createExperience({ ...exp, member_id: member.id })
+          ExperienceService.createExperience({ ...exp, member_id: user.id })
         )
       );
     }
 
-    await AchievementService.removeAchievementsByMemberId(member.id);
+    await AchievementService.removeAchievementsByMemberId(user.id);
     if (achievements && achievements.length > 0) {
       await Promise.all(
         achievements.map((desc: string) =>
           AchievementService.createAchievement({
-            member_id: member.id,
+            member_id: user.id,
             description: desc,
             title: 'Achievement',
             date: new Date(),
@@ -87,11 +86,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await LinkService.removeLinksByMemberId(member.id);
+    await LinkService.removeLinksByMemberId(user.id);
     if (links && links.length > 0) {
       await Promise.all(
         links.map((link: any) =>
-          LinkService.createLink({ ...link, member_id: member.id })
+          LinkService.createLink({ ...link, member_id: user.id })
         )
       );
     }
@@ -122,7 +121,7 @@ export async function POST(req: NextRequest) {
       }
     } 
 
-    revalidatePath(`/profile/${member.id}`);
+    revalidatePath(`/profile/${user.id}`);
 
     return NextResponse.json({ 
       message: memberExists ? 'Profile updated successfully' : 'Profile created successfully',
@@ -138,20 +137,32 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerComponentClient({ cookies });
-    const { data: { user } } = await supabase.auth.getUser();
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    if (!user) {
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      console.error('Auth error:', error?.message);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userFolder = `resumes/${user.id}`;
-    const { data: files, error } = await supabase.storage
+    const { data: files, error: storageError } = await supabase.storage
       .from('resume')
       .list(userFolder);
 
-    if (error) {
-      throw error;
+    if (storageError) {
+      throw storageError;
     }
 
     const resumeVersions = files?.map(file => ({
@@ -179,10 +190,22 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const supabase = createServerComponentClient({ cookies });
-    const { data: { user } } = await supabase.auth.getUser();
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    if (!user) {
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      console.error('Auth error:', error?.message);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -194,12 +217,12 @@ export async function DELETE(req: NextRequest) {
     }
 
     const userFolder = `resumes/${user.id}`;
-    const { error } = await supabase.storage
+    const { error: deleteError } = await supabase.storage
       .from('resume')
       .remove([`${userFolder}/${fileName}`]);
 
-    if (error) {
-      throw error;
+    if (deleteError) {
+      throw deleteError;
     }
 
     return NextResponse.json({ message: 'Resume version deleted successfully' });

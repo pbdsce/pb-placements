@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { 
@@ -26,7 +26,19 @@ interface ProfilePageProps {
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { id } = await params;
-  const member = await MemberService.getMemberById(id);
+  
+  let member = await MemberService.getMemberById(id);
+  
+  if (!member) {
+    try {
+      const supabase = createServerComponentClient({ cookies });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && (id === 'me' || id === user.id)) {
+        member = await MemberService.getMemberById(user.id);
+      }
+    } catch (error) {
+    }
+  }
   
   if (!member) {
     return {
@@ -45,19 +57,45 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
   
-  const member = await MemberService.getMemberById(id);
+  let member = await MemberService.getMemberById(id);
+  let actualMemberId = id;
+  
+  if (!member && user) {
+    if (id === 'me' || id === user.id) {
+      member = await MemberService.getMemberById(user.id);
+      actualMemberId = user.id;
+      
+      if (!member && id === user.id) {
+        console.log('User profile not found, user needs to create profile first');
+      }
+    }
+  }
+  
+  if (!member && user) {
+    const userProfile = await MemberService.getMemberById(user.id);
+    if (userProfile && id !== user.id) {
+      redirect(`/profile/${user.id}`);
+    }
+  }
   
   if (!member) {
+    console.log('Member not found for ID:', id);
+    console.log('Current user ID:', user?.id);
     notFound();
   }
   
-  console.log('Member data:', member); // Debug log
+  console.log('Member data found:', { 
+    memberId: member.id, 
+    memberName: member.name,
+    requestedId: id,
+    currentUserId: user?.id 
+  });
   
   // Fetch additional profile data
-  const skills = await SkillService.getMemberSkills(id);
-  const experiences = await ExperienceService.getMemberExperiences(id);
-  const achievements = await AchievementService.getMemberAchievements(id);
-  const links = await LinkService.getMemberLinks(id);
+  const skills = await SkillService.getMemberSkills(actualMemberId);
+  const experiences = await ExperienceService.getMemberExperiences(actualMemberId);
+  const achievements = await AchievementService.getMemberAchievements(actualMemberId);
+  const links = await LinkService.getMemberLinks(actualMemberId);
   
   const isCurrentUser = user?.id === member.id;
   
@@ -66,7 +104,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       {/* Banner Image */}
       <div className="relative h-48 md:h-48 bg-gradient-to-r from-green-500 to-green-600">
         <div className="absolute inset-0 bg-black/20" />
-        
+
       </div>
 
       <div className="px-8 -mt-16">
