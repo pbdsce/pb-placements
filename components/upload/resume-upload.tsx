@@ -34,6 +34,10 @@ export function ResumeUpload() {
   const [userExists, setUserExists] = useState(false);
   const [loading, setLoading] = useState(true);
   
+  useEffect(() => {
+    checkUserAndResumes();
+  }, []);
+
   const checkUserAndResumes = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -57,10 +61,6 @@ export function ResumeUpload() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    checkUserAndResumes();
-  }, [checkUserAndResumes]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
