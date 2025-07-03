@@ -100,7 +100,6 @@ export async function POST(req: NextRequest) {
       .from('resume')
       .list(userFolder);
 
-<<<<<<< HEAD
     const resumeCount = resumeFiles?.length || 0;
 
     if (resumeCount > 4 && resumeFiles) {
@@ -129,9 +128,6 @@ export async function POST(req: NextRequest) {
       isUpdate: memberExists,
       resumeVersions: resumeCount
     });
-=======
-    return NextResponse.json({ message: 'Profile updated successfully' }, { status: 200 });
->>>>>>> 53e2a0e (Added proper error logging messages and status codes)
 
   } catch (error) {
     console.error('Error updating profile:', error);

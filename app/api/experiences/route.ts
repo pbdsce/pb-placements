@@ -13,24 +13,16 @@ export async function POST(request: NextRequest) {
     
     if (!member_id || !Array.isArray(experiences)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid payload: member_id and experiences array required.' },
+        { success: false, error: 'Invalid payload' },
         { status: 400 }
       );
     }
 
     // Delete existing experiences for this member
-    const { error: deleteError } = await supabase
+    await supabase
       .from('experiences')
       .delete()
       .eq('member_id', member_id);
-
-    if (deleteError) {
-      console.error('Error deleting experiences:', deleteError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete existing experiences.' },
-        { status: 500 }
-      );
-    }
 
     // Insert new experiences
     for (const exp of experiences) {
@@ -46,17 +38,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(
-      { success: true, message: 'Experiences saved successfully.' },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error saving experiences:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'An unexpected error occurred while saving experiences.',
-      },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }

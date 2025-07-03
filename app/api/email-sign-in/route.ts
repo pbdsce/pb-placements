@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   if (!email.endsWith("@pointblank.club")) {
     return NextResponse.json(
       { success: false, message: "Access denied" },
-      { status: 403 }
+      { status: 400 }
     );
   }
 

@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const { member_id, skills } = await request.json();
     if (!member_id || !Array.isArray(skills)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid payload: member_id and skills are required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid payload' }, { status: 400 });
     }
     for (const skillName of skills) {
       // Upsert skill
@@ -23,11 +20,7 @@ export async function POST(request: NextRequest) {
         .upsert([{ name: skillName }], { onConflict: 'name' })
         .select();
       if (skillError) {
-        console.error('Error upserting skill:', skillError);
-        return NextResponse.json(
-          { success: false, error: `Failed to upsert skill: ${skillError.message}` },
-          { status: 500 }
-        );
+        return NextResponse.json({ success: false, error: skillError.message }, { status: 500 });
       }
       const skill = Array.isArray(skillData) ? skillData[0] : skillData;
       // Insert into member_skills
@@ -36,15 +29,8 @@ export async function POST(request: NextRequest) {
         skill_id: skill.id,
       });
     }
-    return NextResponse.json(
-      { success: true, message: 'Skills updated successfully.' },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Unexpected error in member-skills:', error);
-    return NextResponse.json(
-      { success: false, error: 'Unexpected server error.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 } 
