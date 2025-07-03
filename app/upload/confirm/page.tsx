@@ -118,6 +118,55 @@ function ConfirmPageContent() {
     });
   };
 
+  const loadExistingProfile = async (memberId: string) => {
+    try {
+      const [
+        memberRes,
+        skillsRes,
+        experiencesRes,
+        achievementsRes,
+        linksRes,
+      ] = await Promise.all([
+        fetch(`/api/member/profile/${memberId}`),
+        fetch(`/api/member/skills/${memberId}`),
+        fetch(`/api/member/experience/${memberId}`),
+        fetch(`/api/member/achievements/${memberId}`),
+        fetch(`/api/member/links/${memberId}`),
+      ]);
+
+      if (!memberRes.ok) throw new Error('Failed to load member data');
+
+      const memberData = await memberRes.json();
+      const skillsData = await skillsRes.ok ? await skillsRes.json() : [];
+      const experiencesData = await experiencesRes.ok ? await experiencesRes.json() : [];
+      const achievementsData = await achievementsRes.ok ? await achievementsRes.json() : [];
+      const linksData = await linksRes.ok ? await linksRes.json() : [];
+
+      const combinedData = {
+        ...memberData,
+        skills: skillsData,
+        experiences: experiencesData,
+        achievements: achievementsData,
+        links: linksData,
+      };
+
+      populateFormAndParsedData(combinedData, memberId);
+      if (memberData.picture_url) {
+        setPicturePreview(memberData.picture_url);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading existing profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load existing profile data. Please try again.',
+        variant: 'destructive',
+      });
+      router.push('/upload');
+    }
+  };
+
   useEffect(() => {
     const editMode = searchParams.get('edit') === 'true';
     const memberId = searchParams.get('memberId');
@@ -180,56 +229,7 @@ function ConfirmPageContent() {
       setTimeout(() => router.push('/upload'), 3000);
     }
   }
-  }, [router, searchParams]);
-
-  const loadExistingProfile = async (memberId: string) => {
-    try {
-      const [
-        memberRes,
-        skillsRes,
-        experiencesRes,
-        achievementsRes,
-        linksRes,
-      ] = await Promise.all([
-        fetch(`/api/member/profile/${memberId}`),
-        fetch(`/api/member/skills/${memberId}`),
-        fetch(`/api/member/experience/${memberId}`),
-        fetch(`/api/member/achievements/${memberId}`),
-        fetch(`/api/member/links/${memberId}`),
-      ]);
-
-      if (!memberRes.ok) throw new Error('Failed to load member data');
-
-      const memberData = await memberRes.json();
-      const skillsData = await skillsRes.ok ? await skillsRes.json() : [];
-      const experiencesData = await experiencesRes.ok ? await experiencesRes.json() : [];
-      const achievementsData = await achievementsRes.ok ? await achievementsRes.json() : [];
-      const linksData = await linksRes.ok ? await linksRes.json() : [];
-
-      const combinedData = {
-        ...memberData,
-        skills: skillsData,
-        experiences: experiencesData,
-        achievements: achievementsData,
-        links: linksData,
-      };
-
-      populateFormAndParsedData(combinedData, memberId);
-      if (memberData.picture_url) {
-        setPicturePreview(memberData.picture_url);
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading existing profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load existing profile data. Please try again.',
-        variant: 'destructive',
-      });
-      router.push('/upload');
-    }
-  };
+  }, [router, searchParams, toast, loadExistingProfile]);
 
   const handleExperienceChange = (index: number, field: string, value: string | boolean) => {
     setFormData(prev => ({

@@ -39,14 +39,6 @@ export function ResumeSection({ resumeUrl, isEditable, userId }: ResumeSectionPr
   const supabase = createClientComponentClient();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (isEditable) {
-      fetchResumeFiles();
-    } else {
-      setLoading(false);
-    }
-  }, [isEditable]);
-
   const fetchResumeFiles = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -91,6 +83,14 @@ export function ResumeSection({ resumeUrl, isEditable, userId }: ResumeSectionPr
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isEditable) {
+      fetchResumeFiles();
+    } else {
+      setLoading(false);
+    }
+  }, [isEditable, fetchResumeFiles]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
