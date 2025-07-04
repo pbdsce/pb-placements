@@ -55,12 +55,15 @@ function SignInForm() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: "http://localhost:3000",
-        },
-      });
+      const origin =
+      typeof window !== "undefined" ? window.location.origin : "https://career.pointblank.club";
+      console.log(origin)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${origin}`,
+      },
+    });
 
       if (error) throw new Error(error.message);
 
