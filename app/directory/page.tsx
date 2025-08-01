@@ -38,6 +38,7 @@ const convertYearToString = (year: number): string => {
   if (year === 1) return '1st';
   if (year === 2) return '2nd';
   if (year === 3) return '3rd';
+  if (year === 4) return '4th';
   return 'Alumni';
 };
 
@@ -61,7 +62,7 @@ function DirectoryContent() {
   // State for available filter options
   const [allSkills, setAllSkills] = useState<string[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
-  const [years, setYears] = useState<string[]>(['1st', '2nd', '3rd', 'Alumni']);
+  const [years, setYears] = useState<string[]>(['1st', '2nd', '3rd', '4th', 'Alumni']);
   
   // State for selection mode
   const [selectionMode, setSelectionMode] = useState(false);

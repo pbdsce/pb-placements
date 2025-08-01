@@ -7,7 +7,8 @@ const convertYearToNumber = (year: string): number => {
   if (year === '1st') return 1;
   if (year === '2nd') return 2;
   if (year === '3rd') return 3;
-  return 4; // Alumni
+  if (year === '4th') return 4;
+  return 5; // Alumni
 };
 
 export const dynamic = 'force-dynamic';
