@@ -204,7 +204,7 @@ export const MemberService = {
         const terms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
 
         results = results.filter((member: MemberWithSkills) => {
-          return terms.some(term => {
+          return terms.every(term => {
             // Search in name, email, domain
             const searchInBasicFields = 
               member.name?.toLowerCase().includes(term) ||
