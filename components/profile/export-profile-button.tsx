@@ -81,7 +81,6 @@ try {
       memberId,
       memberName,
       memberEmail,
-      profileLink: window.location.href,
     }),
     headers: {
       'Content-Type': 'application/json',

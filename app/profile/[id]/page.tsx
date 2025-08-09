@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkillSection } from "@/components/profile/skill-section";
 import { CertificationSection } from "@/components/profile/certification-section";
 import { ProjectSection } from "@/components/profile/project-section";
-import { extractSlugId } from "@/lib/utils";
+import { memberUrl, resolveIdFromParam } from "@/lib/utils";
 
 interface ProfilePageProps {
   params: Promise<{
@@ -39,27 +39,6 @@ interface ProfilePageProps {
 function formatResumeDisplayName(fullName: string, year: number): string {
   const name = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '_')
   return `${name}_${year}yr_resume.pdf`;
-}
-
-async function resolveIdFromParam(supabase: any, id: string): Promise<string> {
-  const suffix = extractSlugId(id);
-  if (!suffix) return id;
-
-  const base = id.replace(/-([0-9a-f]{6})$/i, '').replace(/-/g, ' ').trim();
-  if (!base) return id;
-
-  try {
-    const { data } = await supabase
-      .from('members')
-      .select('id,name')
-      .ilike('name', `%${base}%`)
-      .limit(50);
-
-    const match = (data || []).find((m: any) => (m.id as string).toLowerCase().startsWith(suffix));
-    if (match?.id) return match.id;
-  } catch {}
-
-  return id;
 }
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
@@ -113,7 +92,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   if (!member && user) {
     const userProfile = await MemberService.getMemberById(supabase, user.id);
     if (userProfile && id !== user.id) {
-      redirect(`/profile/${user.id}`);
+      redirect(memberUrl(userProfile.name, userProfile.id));
     }
   }
   
@@ -121,6 +100,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     console.log('Member not found for ID:', id);
     console.log('Current user ID:', user?.id);
     notFound();
+  }
+
+  if (id === member.id) {
+    redirect(memberUrl(member.name, member.id));
   }
   
   console.log('Member data found:', { 

@@ -8,8 +8,7 @@ import { ArrowUpRight, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
-import { slugify } from "@/lib/utils";
+import { cn, memberUrl } from "@/lib/utils";
 
 interface Member {
   id: string;
@@ -79,7 +78,7 @@ export function MemberCard({ member, isSelected, onSelect, selectionMode, search
             </div>
           )}
           
-          <Link href={`/profile/${slugify(member.name, member.id)}`} className="block">
+          <Link href={memberUrl(member.name, member.id)} className="block">
             <div className="relative aspect-[4/3] overflow-hidden bg-muted">
               {member.picture_url ? (
                 <Image
@@ -103,7 +102,7 @@ export function MemberCard({ member, isSelected, onSelect, selectionMode, search
           <div className="flex justify-between items-start">
             <div>
               <Link 
-                href={`/profile/${slugify(member.name, member.id)}`}
+                href={memberUrl(member.name, member.id)}
                 className="font-semibold text-lg hover:underline hover:text-green-500 transition-colors flex items-center"
               >
                 {member.name}

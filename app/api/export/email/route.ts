@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MemberService } from '@/lib/db';
 import { createClient } from '@supabase/supabase-js';
+import { memberUrl } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,21 +9,18 @@ export async function POST(req: NextRequest) {
       memberId,
       memberName,
       memberEmail,
-      profileLink,
     }: {
       memberId: string;
       memberName: string;
       memberEmail: string;
-      profileLink: string;
     } = await req.json();
 
     // Basic field validation
-    if (!memberId || !memberName || !memberEmail || !profileLink) {
+    if (!memberId || !memberName || !memberEmail) {
       console.warn('[GMAIL_TEMPLATE] Missing required fields:', {
         memberId,
         memberName,
         memberEmail,
-        profileLink,
       });
       return NextResponse.json(
         {
@@ -60,6 +58,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_DOMAIN || 'https://careers.pointblank.club').replace(/\/$/, '');
+    const profileUrl = memberUrl(member.name, member.id, 'profile', siteUrl);
+    const resumeUrl = memberUrl(member.name, member.id, 'resume', siteUrl);
     const subject = `Recommendation: ${memberName} from Point Blank`;
 
     const body = `
@@ -69,9 +70,9 @@ I hope this message finds you well.
 
 I'm writing to recommend ${memberName}, a talented and driven junior from our tech community Point Blank. I've had the chance to work closely with them and can confidently vouch for their technical depth, eagerness to learn, and strong work ethic.
 
-You can find their full profile here: ${profileLink}
+You can find their full profile here: ${profileUrl}
 
-You can download their resume directly from here: ${member.resume_url}
+You can download their resume directly from here: ${resumeUrl}
 
 Please feel free to reach out if you'd like more details or want to connect with them directly.
 
@@ -86,7 +87,7 @@ Best regards,
     return NextResponse.json({
       success: true,
       gmailDraftURL,
-      resumeUrl: member.resume_url,
+      resumeUrl,
     });
   } catch (error: any) {
     console.error('[GMAIL_TEMPLATE] Server error:', error);
