@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function slugify(name: string, id: string): string {
-  const base = name
+  let base = name
   .normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
