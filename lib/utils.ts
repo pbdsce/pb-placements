@@ -13,6 +13,7 @@ export function slugify(name: string, id: string): string {
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
   .replace(/-{2,}/g, '-');
+  if (!base) base = 'user';
   const short = (id || '').slice(0, 6);
   return `${base}-${short}`;
 }
