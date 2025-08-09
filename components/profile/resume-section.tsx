@@ -30,9 +30,10 @@ interface ResumeSectionProps {
   resumeUrl?: string;
   isEditable?: boolean;
   userId?: string;
+  displayFileName?: string;
 }
 
-export function ResumeSection({ resumeUrl, isEditable, userId }: ResumeSectionProps) {
+export function ResumeSection({ resumeUrl, isEditable, userId, displayFileName }: ResumeSectionProps) {
   const [resumeFiles, setResumeFiles] = useState<ResumeFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -223,7 +224,7 @@ export function ResumeSection({ resumeUrl, isEditable, userId }: ResumeSectionPr
         <div className="flex items-center gap-3 p-4 border rounded-lg">
           <FileText className="h-6 w-6 text-muted-foreground" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Resume.pdf</p>
+            <p className="text-sm font-medium truncate">{displayFileName || 'Resume.pdf'}</p>
             <p className="text-xs text-muted-foreground truncate">
               Last updated: {new Date().toLocaleDateString()}
             </p>
