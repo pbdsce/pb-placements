@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkillSection } from "@/components/profile/skill-section";
 import { CertificationSection } from "@/components/profile/certification-section";
 import { ProjectSection } from "@/components/profile/project-section";
+import { extractSlugId } from "@/lib/utils";
 
 interface ProfilePageProps {
   params: Promise<{
@@ -40,11 +41,33 @@ function formatResumeDisplayName(fullName: string, year: number): string {
   return `${name}_${year}yr_resume.pdf`;
 }
 
+async function resolveIdFromParam(supabase: any, id: string): Promise<string> {
+  const suffix = extractSlugId(id);
+  if (!suffix) return id;
+
+  const base = id.replace(/-([0-9a-f]{6})$/i, '').replace(/-/g, ' ').trim();
+  if (!base) return id;
+
+  try {
+    const { data } = await supabase
+      .from('members')
+      .select('id,name')
+      .ilike('name', `%${base}%`)
+      .limit(50);
+
+    const match = (data || []).find((m: any) => (m.id as string).toLowerCase().startsWith(suffix));
+    if (match?.id) return match.id;
+  } catch {}
+
+  return id;
+}
+
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
   
-  let member = await MemberService.getMemberById(supabase, id);
+  const resolvedId = await resolveIdFromParam(supabase, id);
+  let member = await MemberService.getMemberById(supabase, resolvedId);
   
   if (!member) {
     try {
@@ -73,8 +96,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
   
-  let member = await MemberService.getMemberById(supabase, id);
-  let actualMemberId = id;
+  let actualMemberId = await resolveIdFromParam(supabase, id);
+  let member = await MemberService.getMemberById(supabase, actualMemberId);
   
   if (!member && user) {
     if (id === 'me' || id === user.id) {

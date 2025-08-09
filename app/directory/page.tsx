@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { slugify } from "@/lib/utils";
 import { createClient } from '@supabase/supabase-js';
 import LoadingBrackets from '@/components/ui/loading-brackets';
 interface Member {
@@ -195,7 +196,7 @@ function DirectoryContent() {
             memberId: member.id,
             memberName: member.name,
             memberEmail: member.email,
-            profileLink: `${currentOrigin}/profile/${member.id}`,
+            profileLink: `${currentOrigin}/profile/${slugify(member.name, member.id)}`,
           }),
         });
 
@@ -204,14 +205,14 @@ function DirectoryContent() {
         return {
           name: member.name,
           email: member.email,
-          profileLink: `${currentOrigin}/profile/${member.id}`,
+          profileLink: `${currentOrigin}/profile/${slugify(member.name, member.id)}`,
           resumeUrl: res.ok && data?.resumeUrl ? data.resumeUrl : 'Resume not available',
         };
       } catch (error) {
         return {
           name: member.name,
           email: member.email,
-          profileLink: `${currentOrigin}/profile/${member.id}`,
+          profileLink: `${currentOrigin}/profile/${slugify(member.name, member.id)}`,
           resumeUrl: 'Resume not available',
         };
       }
@@ -278,7 +279,7 @@ Best regards,
     }
 
     const profileSummary = selectedMembers.map((member, index) => 
-      `${index + 1}. ${member.name} - ${member.domain} (${member.year_of_study})\n   Profile: ${currentOrigin}/profile/${member.id}`
+      `${index + 1}. ${member.name} - ${member.domain} (${member.year_of_study})\n   Profile: ${currentOrigin}/profile/${slugify(member.name, member.id)}`
     ).join('\n\n');
     
     const shareText = `Check out these ${selectedMembers.length} talented developer${selectedMembers.length > 1 ? 's' : ''} from Point Blank:\n\n${profileSummary}`;
