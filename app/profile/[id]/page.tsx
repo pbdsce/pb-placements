@@ -40,23 +40,6 @@ function formatResumeDisplayName(fullName: string, year: number): string {
   return `${name}_${year}yr_resume.pdf`;
 }
 
-async function resolveIdFromParam(supabase: any, id: string): Promise<string> {
-  const suffix = extractSlugId(id);
-  if (!suffix) return id;
-  const base = id.replace(/-([0-9a-f]{6})$/i, '').replace(/-/g, ' ').trim();
-  try {
-    const { data } = await supabase
-      .from('members')
-      .select('id,name')
-      .ilike('name', `%${base}%`)
-      .limit(1);
-    const match = (data || []).find((m: any) => (m.id as string).toLowerCase().startsWith(suffix));
-    if (match?.id) return match.id;
-  } catch {}
-
-  return id;
-}
-
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { id } = await params;
   const supabase = createServerComponentClient({ cookies });
