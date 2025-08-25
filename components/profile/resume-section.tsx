@@ -90,12 +90,17 @@ function ResumeModal({ resumeUrl, fileName, displayName }: {
                 variant="outline"
                 size="sm"
                 className="h-8 ml-4"
-                asChild
+                onClick={async () => {
+                  const blob = await (await fetch(resumeUrl)).blob();
+                  const link = Object.assign(document.createElement("a"), {
+                    href: URL.createObjectURL(blob),
+                    download: displayName,
+                  });
+                  link.click();
+                }}
               >
-                <a href={resumeUrl} download={displayName}>
-                  <Download className="h-3 w-3 mr-1" />
-                  Download
-                </a>
+                <Download className="h-3 w-3 mr-1" />
+                Download
               </Button>
             </div>
           </DialogHeader>

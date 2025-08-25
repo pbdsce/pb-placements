@@ -51,14 +51,12 @@ export function ExportProfileButton({ memberId, memberName, memberEmail }: Expor
       throw new Error(data.message || 'Failed to generate resume download');
     }
 
-    // Trigger browser download
+    const fileRes = await fetch(data.resumeUrl);
+    const blob = await fileRes.blob();
     const link = document.createElement('a');
-    link.href = data.resumeUrl;
-    link.setAttribute('download', data.filename);
-    link.setAttribute('target', '_blank'); // Optional: open in new tab if not download
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = data.filename;
     link.click();
-    document.body.removeChild(link);
   } catch (err) {
     console.error('Resume download failed:', err);
     alert('Failed to download resume.');
@@ -217,7 +215,7 @@ try {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />
-              Export as PDF
+              Download PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleShareProfile}>
