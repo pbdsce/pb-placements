@@ -7,17 +7,11 @@ import { MemberCard } from "@/components/directory/member-card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Download, Share2, Mailbox, X, Ghost } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Download, Share2, Mailbox, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { createClient } from '@supabase/supabase-js';
 import LoadingBrackets from '@/components/ui/loading-brackets';
+
 interface Member {
   id: string;
   name: string;
@@ -28,18 +22,12 @@ interface Member {
   skills: string[];
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
-
-// Helper function to convert year numbers to string format
 const convertYearToString = (year: number): string => {
-  if (year === 1) return '1st';
-  if (year === 2) return '2nd';
-  if (year === 3) return '3rd';
-  if (year === 4) return '4th';
-  return 'Alumni';
+  if (year === 1) return "1st";
+  if (year === 2) return "2nd";
+  if (year === 3) return "3rd";
+  if (year === 4) return "4th";
+  return "Alumni";
 };
 
 const getOrigin = (): string => {
@@ -52,221 +40,127 @@ const getOrigin = (): string => {
 function DirectoryContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  
-  // State for members data
+
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  
-  // State for available filter options
+
   const [allSkills, setAllSkills] = useState<string[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
-  const [years, setYears] = useState<string[]>(['1st', '2nd', '3rd', '4th', 'Alumni']);
-  
-  // State for selection mode
+  const [years] = useState<string[]>(["1st", "2nd", "3rd", "4th", "Alumni"]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([]);
-  
-  // State for selected skills
+  const [isExporting, setIsExporting] = useState(false);
+
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  
   const [currentOrigin, setCurrentOrigin] = useState<string>("");
-  
-  // Set origin on client side
+
   useEffect(() => {
     setCurrentOrigin(getOrigin());
   }, []);
-  
-  // Fetch all skills and domains on mount
+
   useEffect(() => {
     async function fetchOptions() {
-      // Fetch all skills
-      const { data: skillsData, error: skillsError } = await supabase.from('skills').select('name');
-      console.log('Fetched skillsData:', skillsData, 'Error:', skillsError); // DEBUG LOG
-      if (skillsError) {
-        setAllSkills([]);
-      } else {
-        setAllSkills(Array.isArray(skillsData) ? skillsData.map(s => s.name) : []);
-      }
-      // Fetch all domains
-      const { data: domainData } = await supabase.from('members').select('domain');
-      setDomains(Array.from(new Set((domainData ?? []).map(d => d.domain))).sort());
+      const res = await fetch("/api/directory/options");
+      const data = await res.json();
+      setAllSkills(data.skills || []);
+      setDomains(data.domains || []);
     }
     fetchOptions();
   }, []);
-  
-  // Fetch members based on search params
+
   useEffect(() => {
-    const fetchMembers = async () => {
+    async function fetchMembers() {
       setLoading(true);
       setError(null);
       try {
-        // Build query string from search params
-        const queryParams = new URLSearchParams();
-        const search = searchParams.get('search');
-        if (search) queryParams.append('search', search);
-        searchParams.getAll('domain').forEach(domain => {
-          queryParams.append('domain', domain);
-        });
-        searchParams.getAll('year').forEach(year => {
-          queryParams.append('year', year);
-        });
-        searchParams.getAll('skills').forEach(skill => {
-          queryParams.append('skills', skill);
-        });
-        queryParams.append('_t', Date.now().toString());
-        const response = await fetch(`/api/directory/search?${queryParams.toString()}`, {
-          cache: 'reload',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch members');
-        }
-        // Convert year numbers to string format in the response
-        const formattedMembers = data.results.map((member: any) => ({
-          ...member,
-          year_of_study: typeof member.year_of_study === 'number' 
-            ? convertYearToString(member.year_of_study)
-            : member.year_of_study
+        const queryParams = new URLSearchParams(searchParams.toString());
+        const res = await fetch(`/api/directory/search?${queryParams.toString()}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || "Failed to fetch members");
+
+        const formatted = data.results.map((m: any) => ({
+          ...m,
+          year_of_study:
+            typeof m.year_of_study === "number"
+              ? convertYearToString(m.year_of_study)
+              : m.year_of_study,
         }));
-        setMembers(formattedMembers || []);
+        setMembers(formatted);
       } catch (err: any) {
-        setError(err.message || 'Failed to load members. Please try again.');
-        console.error(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchMembers();
   }, [searchParams]);
-  
-  // Toggle selection mode
+
+
   const toggleSelectionMode = () => {
     setSelectionMode(!selectionMode);
-    if (selectionMode) {
-      setSelectedMembers([]);
-    }
+    if (selectionMode) setSelectedMembers([]);
   };
-  
-  // Handle member selection
+
   const handleSelectMember = (id: string, isSelected: boolean) => {
     if (isSelected) {
-      const memberToAdd = members.find(m => m.id === id);
-      if (memberToAdd) {
-        setSelectedMembers([...selectedMembers, memberToAdd]);
-      }
+      const memberToAdd = members.find((m) => m.id === id);
+      if (memberToAdd) setSelectedMembers([...selectedMembers, memberToAdd]);
     } else {
-      setSelectedMembers(selectedMembers.filter(m => m.id !== id));
+      setSelectedMembers(selectedMembers.filter((m) => m.id !== id));
     }
   };
-  
-  // Clear all selections
-  const clearSelections = () => {
-    setSelectedMembers([]);
-  };
+
+  const clearSelections = () => setSelectedMembers([]);
 
   const handleExportToEmail = async () => {
-  if (selectedMembers.length === 0) {
-    toast({
-      title: "No members selected",
-      description: "Please select members to export",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  setIsExporting(true);
-
-  const gmailWindow = window.open('', '_blank');
-
-  try {
-    const memberDataPromises = selectedMembers.map(async (member) => {
-      try {
-        const res = await fetch('/api/export/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            memberId: member.id,
-            memberName: member.name,
-            memberEmail: member.email,
-            profileLink: `${currentOrigin}/profile/${member.id}`,
-          }),
-        });
-
-        const data = await res.json();
-
-        return {
-          name: member.name,
-          email: member.email,
-          profileLink: `${currentOrigin}/profile/${member.id}`,
-          resumeUrl: res.ok && data?.resumeUrl ? data.resumeUrl : 'Resume not available',
-        };
-      } catch (error) {
-        return {
-          name: member.name,
-          email: member.email,
-          profileLink: `${currentOrigin}/profile/${member.id}`,
-          resumeUrl: 'Resume not available',
-        };
-      }
-    });
-
-    const memberData = await Promise.all(memberDataPromises);
-
-    const memberList = memberData.map((member, index) => 
-      `${index + 1}. ${member.name} (${member.email})\n   - Profile: ${member.profileLink}\n   - Resume: ${member.resumeUrl}`
-    ).join('\n\n');
-
-    const subject = `Recommended Developers from Point Blank (${selectedMembers.length} profile${selectedMembers.length > 1 ? 's' : ''})`;
-
-    const body = `Hi,
-
-I hope this message finds you well.
-
-I'm writing to recommend the following talented developers from our tech community Point Blank:
-
-${memberList}
-
-Please feel free to reach out if you'd like more details or want to connect with any of them directly.
-
-Best regards,
-[Your Name]`;
-
-    const gmailDraftURL = `https://mail.google.com/mail/u/0/?view=cm&fs=1&to=&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    if (gmailWindow) {
-      gmailWindow.location.href = gmailDraftURL;
+    if (selectedMembers.length === 0) {
+      toast({
+        title: "No members selected",
+        description: "Please select members to export",
+        variant: "destructive",
+      });
+      return;
     }
 
-    toast({
-      title: "Email draft created",
-      description: `Gmail draft prepared with ${selectedMembers.length} profile${selectedMembers.length > 1 ? 's' : ''}`,
-    });
+    setIsExporting(true);
+    const gmailWindow = window.open("", "_blank");
 
-  } catch (error) {
-    console.error('Export to email failed:', error);
-    toast({
-      title: "Export failed",
-      description: "Could not create email draft. Please try again.",
-      variant: "destructive",
-    });
+    try {
+      const res = await fetch("/api/directory/export/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          members: selectedMembers,
+          origin: currentOrigin,
+        }),
+      });
 
-    if (gmailWindow) {
-      gmailWindow.close();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      if (gmailWindow) gmailWindow.location.href = data.gmailDraftURL;
+
+      toast({
+        title: "Email draft created",
+        description: `Gmail draft prepared with ${selectedMembers.length} profile(s)`,
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Export failed",
+        description: err.message || "Could not create email draft.",
+        variant: "destructive",
+      });
+      if (gmailWindow) gmailWindow.close();
+    } finally {
+      setIsExporting(false);
     }
-  } finally {
-    setIsExporting(false);
-  }
-};
+  };
 
-
-
+  // Share profiles
   const handleShareProfiles = () => {
     if (selectedMembers.length === 0) {
       toast({
@@ -277,44 +171,46 @@ Best regards,
       return;
     }
 
-    const profileSummary = selectedMembers.map((member, index) => 
-      `${index + 1}. ${member.name} - ${member.domain} (${member.year_of_study})\n   Profile: ${currentOrigin}/profile/${member.id}`
-    ).join('\n\n');
-    
-    const shareText = `Check out these ${selectedMembers.length} talented developer${selectedMembers.length > 1 ? 's' : ''} from Point Blank:\n\n${profileSummary}`;
-    
+    const profileSummary = selectedMembers
+      .map(
+        (m, i) =>
+          `${i + 1}. ${m.name} - ${m.domain} (${m.year_of_study})\n   Profile: ${currentOrigin}/profile/${m.id}`
+      )
+      .join("\n\n");
+
+    const shareText = `Check out these ${selectedMembers.length} talented developer(s):\n\n${profileSummary}`;
+
     if (navigator.share) {
-      navigator.share({
-        title: `${selectedMembers.length} Developer Profile${selectedMembers.length > 1 ? 's' : ''} from Point Blank`,
-        text: shareText,
-        url: currentOrigin,
-      })
-      .then(() => {
-        toast({
-          title: "Shared successfully",
-          description: `${selectedMembers.length} profile${selectedMembers.length > 1 ? 's' : ''} shared successfully`,
+      navigator
+        .share({
+          title: `${selectedMembers.length} Developer Profiles`,
+          text: shareText,
+          url: currentOrigin,
+        })
+        .then(() => {
+          toast({
+            title: "Shared successfully",
+            description: "Profiles shared successfully",
+          });
         });
-      })
-      .catch(() => {
-      });
     } else {
       navigator.clipboard.writeText(shareText);
-      
       toast({
         title: "Profiles copied",
-        description: `${selectedMembers.length} profile${selectedMembers.length > 1 ? 's' : ''} copied to clipboard`,
+        description: "Profiles copied to clipboard",
       });
     }
   };
-  
-  // Filter members by selected skills (if any)
-  const filteredMembers = selectedSkills.length === 0
-    ? members
-    : members.filter(member =>
-        selectedSkills.every(skill => member.skills.includes(skill))
-      );
-  
-  return (
+
+  // Filter by skills
+  const filteredMembers =
+    selectedSkills.length === 0
+      ? members
+      : members.filter((m) =>
+          selectedSkills.every((s) => m.skills.includes(s))
+        );
+
+return (
     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
         <div>

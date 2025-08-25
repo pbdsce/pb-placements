@@ -16,7 +16,7 @@ interface ProfileHeaderProps {
   email: string;
   pictureUrl: string;
   domain: string;
-  yearOfStudy: number;
+  yearOfStudy: string;
   links: Link[];
   isCurrentUser?: boolean;
 }

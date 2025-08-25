@@ -37,7 +37,7 @@ interface ParsedData {
   email: string;
   skills: string[];
   domain?: string;
-  year?: number;
+  year?: string;
   achievements: string[];
   experiences: {
     company: string;
@@ -467,7 +467,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         domain: formData.domain.trim(),
-        year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
+        year_of_study: formData.year_of_study ? formData.year_of_study : null,
         picture_url: pictureUrl,
         resume_url: formData.resume_url,
       },

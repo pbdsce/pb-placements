@@ -35,7 +35,7 @@ interface ProfilePageProps {
   }>;
 }
 
-function formatResumeDisplayName(fullName: string, year: number): string {
+function formatResumeDisplayName(fullName: string, year: string): string {
   const name = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '_')
   return `${name}_${year}yr_resume.pdf`;
 }
@@ -163,7 +163,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     <h1 className="text-2xl md:text-3xl font-bold text-white">{member.name}</h1>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                       <div className="text-green-400 font-medium">
-                        {member.domain} - Year {member.year_of_study}
+                        {member.domain} - {member.year_of_study == "alumni" ? "Alumni" : `Year ${member.year_of_study}`}
                       </div>
                       <div className="flex gap-4 justify-center sm:justify-start">
                         {links.some((l: Link) => l.url?.includes('github')) && (

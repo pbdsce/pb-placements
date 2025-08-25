@@ -34,7 +34,7 @@ interface ParsedData {
   name?: string;
   email?: string;
   domain?: string;
-  year?: number;
+  year?: string;
   skills: string[];
   achievements: string[];
   projects: {
