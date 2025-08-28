@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Logo from "../ui/logo"; 
 
 export function Navbar() {
@@ -24,6 +24,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -32,7 +33,22 @@ export function Navbar() {
     sessionStorage.clear();
     router.push("/");
   };
-  
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);  
  
  return (
   <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -103,60 +119,66 @@ export function Navbar() {
       </div>
     </div>
 
-    {/* Mobile menu content */}
-    {menuOpen && (
-      <div className="md:hidden px-4 pb-4 space-y-3 flex flex-col">
-        <Link 
-          href="/directory" 
-          className={cn(
-            "text-sm font-medium",
-            pathname === "/directory" ? "text-foreground" : "text-foreground/60"
-          )}
-        >
-          Directory
-        </Link>
-        {user && (
-          <Link 
-            href="/upload"
-            className={cn(
-              "text-sm font-medium",
-              pathname === "/upload" ? "text-foreground" : "text-foreground/60"
-            )}
-          >
-            Upload Resume
-          </Link>
-        )}
-        <Link href="/directory">
-          <Button variant="outline" size="sm" className="w-full justify-start">
-            <Search className="h-4 w-4 mr-2" />
-            Search Talent
-          </Button>
-        </Link>
-        {user ? (
-          <>
-            <Link href="/upload">
-              <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Resume
+      {/* Mobile menu content */}
+      {menuOpen && (
+        <div 
+          ref={menuRef} 
+          className="md:hidden px-4 pb-4 space-y-3 flex flex-col pt-5"
+        >          
+          {user ? (
+            <>
+              <Link href="/upload" onClick={() => setMenuOpen(false)}>
+                <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Resume
+                </Button>
+              </Link>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push(`/profile/${user.id}`);
+                }}
+              >
+                My Profile
               </Button>
-            </Link>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => router.push(`/profile/${user.id}`)}>
-              My Profile
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/auth/email-link-sign-in")}>
-              Sign In
-            </Button>
-          </>
-        )}
-        
-      </div>
-    )}
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleSignOut();
+                }}
+              >
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/directory" onClick={() => setMenuOpen(false)}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                >
+                  Directory
+                </Button>
+              </Link>
+
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  router.push("/auth/email-link-sign-in");
+                  setMenuOpen(false);
+                }}
+              >
+                Sign In
+              </Button>
+            </>
+          )}
+        </div>
+      )}
   </header>
  );
 }
