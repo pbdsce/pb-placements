@@ -119,66 +119,67 @@ export function Navbar() {
       </div>
     </div>
 
-      {/* Mobile menu content */}
-      {menuOpen && (
-        <div 
-          ref={menuRef} 
-          className="md:hidden px-4 pb-4 space-y-3 flex flex-col pt-5"
-        >          
-          {user ? (
-            <>
-              <Link href="/upload" onClick={() => setMenuOpen(false)}>
-                <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Resume
-                </Button>
-              </Link>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start" 
-                onClick={() => {
-                  setMenuOpen(false);
-                  router.push(`/profile/${user.id}`);
-                }}
-              >
-                My Profile
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start" 
-                onClick={() => {
-                  setMenuOpen(false);
-                  handleSignOut();
-                }}
-              >
-                Sign Out
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/directory" onClick={() => setMenuOpen(false)}>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                >
-                  Directory
-                </Button>
-              </Link>
+   {/* Mobile menu content */}
+    {menuOpen && (
+      <div 
+        ref={menuRef} 
+        className="md:hidden px-4 pb-4 space-y-3 flex flex-col pt-5"
+      >
+        {/* Directory should always be here */}
+        <Link href="/directory" onClick={() => setMenuOpen(false)}>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+          >
+            Directory
+          </Button>
+        </Link>
 
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start" 
-                onClick={() => {
-                  router.push("/auth/email-link-sign-in");
-                  setMenuOpen(false);
-                }}
-              >
-                Sign In
+        {user ? (
+          <>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                setMenuOpen(false);
+                router.push(`/profile/${user.id}`);
+              }}
+            >
+              My Profile
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                setMenuOpen(false);
+                handleSignOut();
+              }}
+            >
+              Sign Out
+            </Button>
+            <Link href="/upload" onClick={() => setMenuOpen(false)}>
+              <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Resume
               </Button>
-            </>
-          )}
-        </div>
-      )}
+            </Link>
+          </>
+        ) : (
+          <>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                router.push("/auth/email-link-sign-in");
+                setMenuOpen(false);
+              }}
+            >
+              Sign In
+            </Button>
+          </>
+        )}
+      </div>
+    )}
   </header>
  );
 }
