@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Code2, Search, Upload, User, Menu } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Upload, User, Menu } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { motion, AnimatePresence } from "framer-motion"
 import { useAuthStore } from "@/lib/authStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -35,20 +36,18 @@ export function Navbar() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
+  const handlePointerDown = (event: PointerEvent) => {
+    const target = event.target as Node;
+    if (menuRef.current && menuRef.current.contains(target)) return;
+    if (toggleRef.current && toggleRef.current.contains(target)) return;
+    setMenuOpen(false);
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, []);  
+  document.addEventListener("pointerdown", handlePointerDown);
+  return () => {
+    document.removeEventListener("pointerdown", handlePointerDown);
+  };
+}, []);
  
  return (
   <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -113,16 +112,28 @@ export function Navbar() {
 
       {/* Mobile hamburger */}
       <div className="md:hidden">
-        <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+        <Button
+          ref={toggleRef}
+          variant="ghost"
+          size="icon"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setMenuOpen((prev) => !prev)}
+        >
           <Menu className="h-5 w-5" />
         </Button>
       </div>
     </div>
 
    {/* Mobile menu content */}
+  <AnimatePresence>
     {menuOpen && (
-      <div 
-        ref={menuRef} 
+      <motion.div
+        key="mobile-menu"
+        ref={menuRef}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
         className="md:hidden px-4 pb-4 space-y-3 flex flex-col pt-5"
       >
         {/* Directory should always be here */}
@@ -178,8 +189,9 @@ export function Navbar() {
             </Button>
           </>
         )}
-      </div>
+      </motion.div>
     )}
+  </AnimatePresence>
   </header>
  );
 }
