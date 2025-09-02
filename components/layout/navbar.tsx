@@ -35,6 +35,42 @@ export function Navbar() {
     router.push("/");
   };
 
+  const containerVariants = {
+    open: {
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+        ease: "easeInOut",
+      },
+    },
+    closed: {
+      transition: {
+        staggerChildren: 0.05,
+        staggerDirection: -1,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const itemVariants = {
+    open: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        ease: "easeInOut",
+      },
+    },
+    closed: {
+      y: 15,
+      opacity: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+  };
+
   useEffect(() => {
   const handlePointerDown = (event: PointerEvent) => {
     const target = event.target as Node;
@@ -128,70 +164,83 @@ export function Navbar() {
   <AnimatePresence>
     {menuOpen && (
       <motion.div
+        id="mobile-menu"
         key="mobile-menu"
         ref={menuRef}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="md:hidden px-4 pb-4 space-y-3 flex flex-col pt-5"
+        initial="closed"
+        animate="open"
+        exit="closed"
+        variants={containerVariants}
+        className="md:hidden px-4 pb-4 flex flex-col pt-5"
       >
-        {/* Directory should always be here */}
-        <Link href="/directory" onClick={() => setMenuOpen(false)}>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start"
-          >
-            Directory
-          </Button>
-        </Link>
-
-        {user ? (
-          <>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={() => {
-                setMenuOpen(false);
-                router.push(`/profile/${user.id}`);
-              }}
-            >
-              My Profile
-            </Button>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={() => {
-                setMenuOpen(false);
-                handleSignOut();
-              }}
-            >
-              Sign Out
-            </Button>
-            <Link href="/upload" onClick={() => setMenuOpen(false)}>
-              <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Resume
+        <motion.ul
+          variants={containerVariants}
+          className="flex flex-col space-y-4"
+        >
+          <motion.li variants={itemVariants}>
+            <Link href="/directory" onClick={() => setMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start">
+                Directory
               </Button>
             </Link>
-          </>
-        ) : (
-          <>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={() => {
-                router.push("/auth/email-link-sign-in");
-                setMenuOpen(false);
-              }}
-            >
-              Sign In
-            </Button>
-          </>
-        )}
+          </motion.li>
+
+          {user ? (
+            <>
+              <motion.li variants={itemVariants}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push(`/profile/${user.id}`);
+                  }}
+                >
+                  My Profile
+                </Button>
+              </motion.li>
+
+              <motion.li variants={itemVariants}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleSignOut();
+                  }}
+                >
+                  Sign Out
+                </Button>
+              </motion.li>
+
+              <motion.li variants={itemVariants}>
+                <Link href="/upload" onClick={() => setMenuOpen(false)}>
+                  <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Resume
+                  </Button>
+                </Link>
+              </motion.li>
+            </>
+          ) : (
+            <motion.li variants={itemVariants}>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  router.push("/auth/email-link-sign-in");
+                  setMenuOpen(false);
+                }}
+              >
+                Sign In
+              </Button>
+            </motion.li>
+          )}
+        </motion.ul>
       </motion.div>
     )}
   </AnimatePresence>
+
   </header>
  );
 }
