@@ -167,15 +167,18 @@ export function Navbar() {
         id="mobile-menu"
         key="mobile-menu"
         ref={menuRef}
-        initial="closed"
-        animate="open"
-        exit="closed"
-        variants={containerVariants}
-        className="md:hidden px-4 pb-4 flex flex-col pt-5"
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: "auto", opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        className="md:hidden overflow-hidden"
       >
         <motion.ul
           variants={containerVariants}
-          className="flex flex-col space-y-4"
+          initial="closed"
+          animate="open"
+          exit="closed"
+          className="flex flex-col space-y-4 px-4 pb-4 pt-5"
         >
           <motion.li variants={itemVariants}>
             <Link href="/directory" onClick={() => setMenuOpen(false)}>
@@ -240,7 +243,6 @@ export function Navbar() {
       </motion.div>
     )}
   </AnimatePresence>
-
   </header>
  );
 }
