@@ -63,6 +63,23 @@ interface ParsedData {
   file_path?: string;
 }
 
+const currentYear = new Date().getFullYear();
+const passoutYears: number[] = [];
+for (let y = currentYear + 4; y >= 2018; y--) {
+  passoutYears.push(y);
+}
+
+const getYearLabel = (passoutYear: number) => {
+  const diff = passoutYear - currentYear;
+  if (diff >= 0) {
+    const yearNum = 4 - diff;
+    const suffix = yearNum === 1 ? "st" : yearNum === 2 ? "nd" : yearNum === 3 ? "rd" : "th";
+    return `${yearNum}${suffix} Year`;
+  } else {
+    return passoutYear.toString();
+  }
+};
+
 function ConfirmPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -577,15 +594,18 @@ const handleSubmit = async (e: React.FormEvent) => {
               />
             </div>
             <div>
-              <Label>Year</Label>
-              <Select value={formData.year_of_study} onValueChange={(value) => setFormData({ ...formData, year_of_study: value })}>
+              <Label>Passout Year</Label>
+              <Select
+                value={formData.year_of_study}
+                onValueChange={(value) => setFormData({ ...formData, year_of_study: value })}
+              >
                 <SelectTrigger className="bg-white/10 text-white border border-white/20">
-                  <SelectValue placeholder="Select year" />
+                  <SelectValue placeholder="Select passout year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["1", "2", "3", "4", "alumni"].map((y) => (
-                    <SelectItem key={y} value={y}>
-                      {y === "alumni" ? "Alumni" : `${y}${y === "1" ? "st" : y === "2" ? "nd" : y === "3" ? "rd" : "th"} Year`}
+                  {passoutYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
                     </SelectItem>
                   ))}
                 </SelectContent>

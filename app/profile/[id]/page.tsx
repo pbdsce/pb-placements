@@ -106,6 +106,23 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     requestedId: id,
     currentUserId: user?.id 
   });
+
+    const getProfileYearLabel = (passoutYear: number) => {
+    const currentYear = new Date().getFullYear();
+
+    if (currentYear > passoutYear) {
+      return `${passoutYear} Passout`;
+    }
+
+    const yearDiff = passoutYear - currentYear - 1;
+    let suffix = "th";
+    if (yearDiff === 1) suffix = "st";
+    else if (yearDiff === 2) suffix = "nd";
+    else if (yearDiff === 3) suffix = "rd";
+
+    return `${yearDiff}${suffix} Year`;
+  };
+
   
   // Fetch additional profile data
   const skills = await SkillService.getMemberSkills(supabase, actualMemberId);
@@ -163,7 +180,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     <h1 className="text-2xl md:text-3xl font-bold text-white">{member.name}</h1>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                       <div className="text-green-400 font-medium">
-                        {member.domain} - {member.year_of_study == "alumni" ? "Alumni" : `Year ${member.year_of_study}`}
+                        {member.domain} - {getProfileYearLabel(Number(member.year_of_study))}
                       </div>
                       <div className="flex gap-4 justify-center sm:justify-start">
                         {links.some((l: Link) => l.url?.includes('github')) && (

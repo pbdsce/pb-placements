@@ -47,7 +47,14 @@ function DirectoryContent() {
 
   const [allSkills, setAllSkills] = useState<string[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
-  const [years] = useState<string[]>(["1st", "2nd", "3rd", "4th", "Alumni"]);
+  const currentYear = new Date().getFullYear();
+  const startYear = 2018;
+  const endYear = currentYear + 4;
+
+  const years: string[] = Array.from(
+    { length: endYear - startYear + 1 },
+    (_, i) => `${startYear + i}`
+  );
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([]);

@@ -6,13 +6,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
-function convertYearToString(year: number): string {
-  if (year === 1) return '1st';
-  if (year === 2) return '2nd';
-  if (year === 3) return '3rd';
-  if (year === 4) return '4th';
-  return 'Alumni';
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,17 +15,7 @@ export async function GET(request: NextRequest) {
     const years = searchParams.getAll("year");
     const skills = searchParams.getAll("skills");
 
-    const yearMap: Record<string, number | string> = {
-      "1st": 1,
-      "2nd": 2,
-      "3rd": 3,
-      "4th": 4,
-      "Alumni": "alumni",
-    };
-
-    const allMappedYears: (number | string)[] = years
-      .map((y) => yearMap[y])
-      .filter((val): val is number | string => val !== undefined);
+   const allMappedYears: string[] = years;
 
     const baseSelectStatement = `
       id,
@@ -114,9 +97,7 @@ export async function GET(request: NextRequest) {
     const formattedResults = fetchedMembersData.map((member: any) => ({
       ...member,
       skills: member.member_skills.map((ms: any) => ms.skills.name),
-      year_of_study: typeof member.year_of_study === 'number'
-        ? convertYearToString(member.year_of_study)
-        : member.year_of_study
+      year_of_study: member.year_of_study
     }));
 
     const response = NextResponse.json({

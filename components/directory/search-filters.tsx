@@ -151,7 +151,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
             </Button>
           )}
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center justify-start sm:w-fit w-full">
           {/* Skills Popover with Search Bar and Dropdown */}
           <Popover open={skillsOpen} onOpenChange={setSkillsOpen}>
             <PopoverTrigger asChild>
@@ -159,7 +159,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={skillsOpen}
-                className="justify-between min-w-[120px]"
+                className="justify-between"
               >
                 Skills
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -201,7 +201,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={domainOpen}
-                className="justify-between min-w-[120px]"
+                className="justify-between"
               >
                 Domain
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -243,7 +243,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={yearOpen}
-                className="justify-between min-w-[120px]"
+                className="justify-between"
               >
                 Year
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -259,7 +259,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                   className="mb-2 px-2 py-1 border rounded w-full"
                 />
                 <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
-                  {filteredYears.slice(0, 10).map(year => (
+                  {filteredYears.map(year => (
                     <button
                       key={year}
                       className={`text-left px-2 py-1 rounded hover:bg-muted w-full ${selectedYears[0] === year ? 'bg-primary text-primary-foreground' : ''}`}
