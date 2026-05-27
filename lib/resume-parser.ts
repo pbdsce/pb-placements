@@ -201,7 +201,7 @@ async function retryWithDelay<T>(
 /** Uses Gemini to add spacing to concatenated text*/
 async function cleanTextWithAI(text: string): Promise<string> {
   return retryWithDelay(async () => {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     const prompt = `
      Fix this resume text with strict requirements:
