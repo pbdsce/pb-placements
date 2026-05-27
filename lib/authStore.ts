@@ -13,7 +13,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 }));
 
 export const initAuthListener = () => {
-
   supabase.auth.getSession().then(({ data: { session } }) => {
     useAuthStore.getState().setUser(session?.user ?? null);
   });
@@ -21,12 +20,16 @@ export const initAuthListener = () => {
   supabase.auth.onAuthStateChange(async (event, session) => {
     useAuthStore.getState().setUser(session?.user ?? null);
 
-    await fetch("/api/callback", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ event, session }),
-    });
+    try {
+      await fetch("/api/callback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ event, session }),
+      });
+    } catch {
+      // Non-critical: session sync failure doesn't block the UI
+    }
   });
 };

@@ -24,13 +24,14 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: origin },
+    options: { emailRedirectTo: `${origin}/api/callback` },
   });
 
   if (error) {
+    const status = error.status === 429 ? 429 : (error.status ?? 500);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 },
+      { status },
     );
   }
 
