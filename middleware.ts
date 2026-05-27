@@ -22,6 +22,10 @@ export async function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
+  if (pathname.startsWith('/api/resume/view')) {
+    return res;
+  }
+
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );

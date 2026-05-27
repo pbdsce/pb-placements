@@ -27,9 +27,11 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
+    const proxyUrl = `/api/resume/view/${memberId}`;
+
     return NextResponse.json({
       success: true,
-      resumeUrl: member.resume_url,
+      resumeUrl: proxyUrl,
       filename: `${memberName.replace(/\s+/g, '-').toLowerCase()}-resume.pdf`,
     });
 

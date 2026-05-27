@@ -338,6 +338,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   <ResumeSection 
                     resumeUrl={member.resume_url} 
                     isEditable={isCurrentUser}
+                    userId={member.id}
                     displayFileName={displayFileName}
                   />
                 </div>
