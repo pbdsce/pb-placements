@@ -23,10 +23,10 @@ export function ProjectSection({ projects, isEditable, onEdit, onDelete }: Proje
     <div className="space-y-4">
       {projects.map((project) => (
         <div key={project.id} className="border-b border-gray-800 pb-4 last:border-0 last:pb-0">
-          <h3 className="text-base font-semibold text-white">{project.name}</h3>
+          <h3 className="break-words text-base font-semibold text-white">{project.name}</h3>
 
           {project.description && (
-            <ul className="list-disc list-inside text-gray-300 text-sm mt-2 space-y-1">
+            <ul className="list-disc list-inside break-words text-gray-300 text-sm mt-2 space-y-1">
               {project.description
                 .split(/[•·‣●◦⁃∙*]\s*/g)
                 .map((point: string, index: number) =>

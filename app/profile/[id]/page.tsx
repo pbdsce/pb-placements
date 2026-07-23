@@ -101,12 +101,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
 
-  if (id === member.id) {
-    redirect(memberUrl(member.name, member.id));
+  if (id === actualMemberId) {
+    redirect(memberUrl(member.name, actualMemberId));
   }
   
   console.log('Member data found:', { 
-    memberId: member.id, 
+    memberId: actualMemberId, 
     memberName: member.name,
     requestedId: id,
     currentUserId: user?.id 
@@ -120,8 +120,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const certifications = await CertificationService.getMemberCertifications(supabase, actualMemberId);
   const projects = await ProjectService.getMemberProjects(supabase, actualMemberId);
   
-  const isCurrentUser = user?.id === member.id;
+  const isCurrentUser = user?.id === actualMemberId;
   const displayFileName = formatResumeDisplayName(member.name, member.year_of_study);
+  const showAchievementsTab = achievements.length > 0 || isCurrentUser;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
@@ -137,17 +138,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-md"></div>
       </div>
 
-       <div className="relative px-4 md:px-8 -mt-32 z-10">
+       <div className="relative px-4 max-[270px]:px-2 md:px-8 -mt-32 z-10">
         {/* Profile Header Card */}
-        <div className="mb-8 transform hover:scale-[1.02] transition-all duration-500">
-          <div className="bg-black rounded-3xl border border-gray-800 shadow-2xl p-6 md:p-6">
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-end">
+        <div className="mb-8 transform transition-all duration-500 sm:hover:scale-[1.02]">
+          <div className="bg-black rounded-3xl border border-gray-800 shadow-2xl p-6 max-[270px]:rounded-2xl max-[270px]:p-3 md:p-6">
+            <div className="flex min-w-0 flex-col lg:flex-row gap-6 max-[270px]:gap-4 items-start lg:items-end">
               {/* Profile Info */}
-              <div className="flex-1 w-full">
-                <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+              <div className="min-w-0 flex-1 w-full">
+                <div className="flex min-w-0 flex-col sm:flex-row gap-6 max-[270px]:gap-3 items-center sm:items-start">
                   {/* Profile Picture */}
                   <div className="shrink-0">
-                    <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-green-500 overflow-hidden">
+                    <div className="relative w-24 h-24 max-[270px]:h-20 max-[270px]:w-20 md:w-32 md:h-32 rounded-full border-2 border-green-500 overflow-hidden">
                       {member.picture_url ? (
                         <Image
                           src={member.picture_url}
@@ -164,19 +165,19 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   </div>
 
                   {/* Profile Details */}
-                  <div className="flex-1 text-center sm:text-left">
-                    <h1 className="text-2xl md:text-3xl font-bold text-white">{member.name}</h1>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-                      <div className="text-green-400 font-medium">
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <h1 className="break-words text-2xl font-bold leading-tight text-white max-[270px]:text-lg md:text-3xl">{member.name}</h1>
+                    <div className="flex min-w-0 flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+                      <div className="break-words text-green-400 font-medium max-[270px]:text-sm">
                         {member.domain} - Year {member.year_of_study}
                       </div>
-                      <div className="flex gap-4 justify-center sm:justify-start">
+                      <div className="flex flex-wrap gap-4 max-[270px]:gap-2 justify-center sm:justify-start">
                         {links.some((l: Link) => l.url?.includes('github')) && (
                           <a
                             href={links.find((l: Link) => l.url?.includes('github'))?.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white hover:text-green-400 transition-colors"
+                            className="text-white hover:text-green-400 transition-colors max-[270px]:text-sm"
                           >
                             GitHub
                           </a>
@@ -186,7 +187,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                             href={links.find((l: Link) => l.url?.includes('linkedin'))?.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white hover:text-green-400 transition-colors"
+                            className="text-white hover:text-green-400 transition-colors max-[270px]:text-sm"
                           >
                             LinkedIn
                           </a>
@@ -194,22 +195,22 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                       </div>
                     </div>
                     {member.email && (
-                      <div className="text-gray-400 text-sm mt-2">{member.email}</div>
+                      <div className="break-all text-gray-400 text-sm mt-2 max-[270px]:text-xs">{member.email}</div>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col items-center lg:items-start gap-2 w-full lg:w-auto">
+              <div className="flex min-w-0 flex-col items-stretch lg:items-start gap-2 w-full lg:w-auto">
                 {isCurrentUser && (
                   <div className="transform hover:scale-110 transition-all duration-300 w:full">
-                    <EditProfileButton memberId={member.id} />
+                    <EditProfileButton />
                   </div>
                 )}
-                <div className="transform hover:scale-110 transition-all duration-300 w-full">
+                <div className="transform transition-all duration-300 sm:hover:scale-110 w-full">
                   <ExportProfileButton
-                    memberId={member.id}
+                    memberId={actualMemberId}
                     memberName={member.name}
                     memberEmail={member.email}
                   />
@@ -223,25 +224,31 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
              {/* Experience and Achievements Tabs */}
-            <div className="group transform hover:scale-[1.02] transition-all duration-500">
+            <div className="group transform transition-all duration-500 sm:hover:scale-[1.02]">
               <div className="bg-black rounded-2xl border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                 <Tabs defaultValue="experience" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-black rounded-t-xl p-0">
+                <TabsList className={`grid h-auto min-h-10 w-full ${showAchievementsTab ? 'grid-cols-2' : 'grid-cols-1'} bg-black rounded-t-xl p-0`}>
                     <TabsTrigger 
                       value="experience" 
-                      className="data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 rounded-tl-lg py-4 border-r border-gray-800"
+                      className={`min-w-0 whitespace-normal break-words px-2 py-3 text-xs leading-tight data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 min-[360px]:text-sm sm:py-4 ${showAchievementsTab ? 'rounded-tl-lg border-r border-gray-800' : 'rounded-t-lg'}`}
                     >
-                      Experience
+                       <span className="block w-full min-w-0 [overflow-wrap:anywhere]">
+                        Experience
+                      </span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="achievements" 
-                      className="data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 rounded-tr-lg py-4"
-                    >
-                      Achievements
-                    </TabsTrigger>
+                    {showAchievementsTab && (
+                      <TabsTrigger 
+                        value="achievements" 
+                        className="min-w-0 whitespace-normal break-words rounded-tr-lg px-2 py-3 text-xs leading-tight data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 min-[360px]:text-sm sm:py-4"
+                      >
+                        <span className="block w-full min-w-0 [overflow-wrap:anywhere]">
+                        Achievements
+                        </span>
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
-                  <div className="p-6">
+                  <div className="p-6 max-[270px]:p-3">
                     <TabsContent value="experience">
                       <div className="max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
                         {experiences.length > 0 ? (
@@ -257,44 +264,50 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="achievements">
-                      <div className="max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                        {achievements.length > 0 ? (
-                          <AchievementSection 
-                            achievements={achievements} 
-                            isEditable={isCurrentUser}
-                          />
-                        ) : (
-                          <div className="text-center text-gray-400 py-8">
-                            No achievements information available
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
+                    {showAchievementsTab && (
+                      <TabsContent value="achievements">
+                        <div className="max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+                          {achievements.length > 0 ? (
+                            <AchievementSection 
+                              achievements={achievements} 
+                              isEditable={isCurrentUser}
+                            />
+                          ) : (
+                            <div className="text-center text-gray-400 py-8">
+                              No achievements information available
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    )}
                   </div>
                 </Tabs>
               </div>
             </div>
           {/* Certifications and Projects Tabs*/}
-          <div className="group transform hover:scale-[1.02] transition-all duration-500">
+          <div className="group transform transition-all duration-500 sm:hover:scale-[1.02]">
             <div className="bg-black rounded-2xl border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
               <Tabs defaultValue="projects" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-black rounded-t-xl p-0">
+                <TabsList className="grid h-auto min-h-10 w-full grid-cols-2 bg-black rounded-t-xl p-0">
                   <TabsTrigger 
                     value="projects" 
-                    className="data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 rounded-tl-lg py-4 border-r border-gray-800"
+                    className="min-w-0 whitespace-normal break-words rounded-tl-lg border-r border-gray-800 px-2 py-3 text-xs leading-tight data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 min-[360px]:text-sm sm:py-4"
                   >
+                    <span className="block w-full min-w-0 [overflow-wrap:anywhere]">
                     Projects
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="certifications" 
-                    className="data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 rounded-tr-lg py-4"
+                    className="min-w-0 whitespace-normal break-words rounded-tr-lg px-2 py-3 text-xs leading-tight data-[state=active]:bg-gray-800 data-[state=active]:text-green-400 min-[360px]:text-sm sm:py-4"
                   >
+                    <span className="block w-full min-w-0 [overflow-wrap:anywhere]">
                     Certifications
+                    </span>
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="p-6">
+                <div className="p-6 max-[270px]:p-3">
                   <TabsContent value="projects">
                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
                       {projects.length > 0 ? (
@@ -327,7 +340,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
             {/* Skills Section */}
-            <div className="group transform hover:scale-[1.02] transition-all duration-500">
+            <div className="group transform transition-all duration-500 sm:hover:scale-[1.02]">
               <div className="bg-black rounded-2xl border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                 <div className="relative">
                   <SkillSection 
@@ -337,13 +350,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 </div>
               </div>
             </div>
-            <div className="group transform hover:scale-[1.02] transition-all duration-500">
+            <div className="group transform transition-all duration-500 sm:hover:scale-[1.02]">
               <div className="bg-black rounded-2xl border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                 <div className="relative">
                   <ResumeSection 
                     resumeUrl={member.resume_url} 
                     isEditable={isCurrentUser}
-                    userId={member.id}
+                    userId={actualMemberId}
                     displayFileName={displayFileName}
                   />
                 </div>

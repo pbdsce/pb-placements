@@ -7,7 +7,7 @@ export interface Member {
   email: string;
   picture_url: string;
   domain: string;
-  year_of_study: number;
+  year_of_study: number ;
   resume_url: string;
   created_at: string;
   updated_at: string;
@@ -65,7 +65,7 @@ export interface Project {
   member_id: string;
   name: string;
   description: string;
-  link: string;
+  link?: string;
 }
 
 // Initialize database tables if they don't exist
@@ -84,7 +84,7 @@ export const MemberService = {
     const { data, error } = await supabase
       .from('members')
       .select(`
-        *,
+        id, name, email, picture_url, domain, year_of_study, resume_url,
         member_skills (
           skills (
             name
@@ -104,10 +104,10 @@ export const MemberService = {
   async getMemberById(supabase: any, id: string) {
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('*')
+      .select('name, email, picture_url, domain, year_of_study, resume_url')
       .eq('id', id)
       .single();
-    
+
     console.log('Fetched member data:', member); // Debug log
     
     if (memberError || !member) return null;
@@ -122,14 +122,14 @@ export const MemberService = {
     // Fetch achievements
     const { data: achievements } = await supabase
       .from('achievements')
-      .select('*')
+      .select('title, description, date')
       .eq('member_id', id)
       .order('date', { ascending: false });
 
     // Fetch experiences
     const { data: experiences } = await supabase
       .from('experiences')
-      .select('*')
+      .select('company, role, description, start_date, end_date, is_current')
       .eq('member_id', id)
       .order('is_current', { ascending: false })
       .order('start_date', { ascending: false });
@@ -137,19 +137,19 @@ export const MemberService = {
     // Fetch links
     const { data: links } = await supabase
       .from('links')
-      .select('*')
+      .select('name, url')
       .eq('member_id', id);
 
     // Fetch certifications
     const { data: certifications } = await supabase
       .from('certifications')
-      .select('*')
+      .select('name, issuing_organization')
       .eq('member_id', id);
 
     // Fetch projects
     const { data: projects } = await supabase
       .from('projects')
-      .select('*')
+      .select('name, description, link')
       .eq('member_id', id);
 
     return {
@@ -170,7 +170,7 @@ export const MemberService = {
       let query = supabase
         .from('members')
         .select(`
-          *,
+          id, name, email, picture_url, domain, year_of_study, resume_url,
           member_skills (
             skills (
               name
@@ -240,7 +240,7 @@ export const MemberService = {
     const { data, error } = await supabase
       .from('members')
       .insert([member])
-      .select()
+      .select('name, email, picture_url, domain, year_of_study, resume_url')
       .single();
 
     console.log('Member creation result:', { data, error }); // Debug log
@@ -254,7 +254,7 @@ export const MemberService = {
       .from('members')
       .update(member)
       .eq('id', id)
-      .select()
+      .select('name, email, picture_url, domain, year_of_study, resume_url')
       .single();
 
     if (error) throw error;
@@ -267,7 +267,7 @@ export const MemberService = {
     const { data, error } = await supabase
       .from('members')
       .upsert(member)
-      .select()
+      .select('name, email, picture_url, domain, year_of_study, resume_url')
       .single();
 
     console.log('Member upsert result:', { data, error }); // Debug log
@@ -282,7 +282,7 @@ export const CertificationService = {
   async getMemberCertifications(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('certifications')
-      .select('*')
+      .select('id, name, issuing_organization')
       .eq('member_id', memberId);
 
     if (error) throw error;
@@ -293,7 +293,7 @@ export const CertificationService = {
     const { data, error } = await supabase
       .from('certifications')
       .insert(certification)
-      .select()
+      .select('name, issuing_organization')
       .single();
 
     if (error) throw error;
@@ -304,7 +304,7 @@ export const CertificationService = {
     const { data, error } = await supabase
       .from('certifications')
       .insert(certifications)
-      .select();
+      .select('name, issuing_organization');
     if (error) throw error;
     return data;
   },
@@ -324,7 +324,7 @@ export const SkillService = {
   async getAllSkills(supabase: any) {
     const { data, error } = await supabase
       .from('skills')
-      .select('*')
+      .select('name')
       .order('name');
     
     if (error) throw error;
@@ -379,7 +379,7 @@ export const SkillService = {
   async getMemberSkills(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('member_skills')
-      .select('skills(id, name)')
+      .select('skills(name)')
       .eq('member_id', memberId);
     
     if (error) throw error;
@@ -400,7 +400,7 @@ export const AchievementService = {
   async getMemberAchievements(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('achievements')
-      .select('*')
+      .select('id, title, description, date')
       .eq('member_id', memberId)
       .order('date', { ascending: false });
     if (error) throw error;
@@ -411,7 +411,7 @@ export const AchievementService = {
     const { data, error } = await supabase
       .from('achievements')
       .insert([achievement])
-      .select()
+      .select('title, description, date')
       .single();
     if (error) throw error;
     return data;
@@ -421,7 +421,7 @@ export const AchievementService = {
     const { data, error } = await supabase
       .from('achievements')
       .insert(achievements)
-      .select();
+      .select('title, description, date');
     if (error) throw error;
     return data;
   },
@@ -448,7 +448,7 @@ export const ExperienceService = {
   async getMemberExperiences(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('experiences')
-      .select('*')
+      .select('id, company, role, description, start_date, end_date, is_current')
       .eq('member_id', memberId);
     if (error) throw error;
     return data;
@@ -458,7 +458,7 @@ export const ExperienceService = {
     const { data, error } = await supabase
       .from('experiences')
       .insert([experience])
-      .select()
+      .select('company, role, description, start_date, end_date, is_current')
       .single();
     if (error) throw error;
     return data;
@@ -468,7 +468,7 @@ export const ExperienceService = {
     const { data, error } = await supabase
       .from('experiences')
       .insert(experiences)
-      .select();
+      .select('company, role, description, start_date, end_date, is_current');
     if (error) throw error;
     return data;
   },
@@ -487,7 +487,7 @@ export const LinkService = {
   async getMemberLinks(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('links')
-      .select('*')
+      .select('name, url')
       .eq('member_id', memberId);
     if (error) throw error;
     return data;
@@ -497,7 +497,7 @@ export const LinkService = {
     const { data, error } = await supabase
       .from('links')
       .insert([link])
-      .select()
+      .select('name, url')
       .single();
     if (error) throw error;
     return data;
@@ -507,7 +507,7 @@ export const LinkService = {
     const { data, error } = await supabase
       .from('links')
       .insert(links)
-      .select();
+      .select('name, url');
     if (error) throw error;
     return data;
   },
@@ -526,7 +526,7 @@ export const ProjectService = {
   async getMemberProjects(supabase: any, memberId: string) {
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, name, description, link')
       .eq('member_id', memberId);
     if (error) throw error;
     return data || [];
@@ -536,7 +536,7 @@ export const ProjectService = {
     const { data, error } = await supabase
       .from('projects')
       .insert([project])
-      .select()
+      .select('name, description, link')
       .single();
     if (error) throw error;
     return data;
@@ -546,7 +546,7 @@ export const ProjectService = {
     const { data, error } = await supabase
       .from('projects')
       .insert(projects)
-      .select();
+      .select('name, description, link');
     if (error) throw error;
     return data;
   },
@@ -556,7 +556,7 @@ export const ProjectService = {
       .from('projects')
       .update(project)
       .eq('id', id)
-      .select()
+      .select('name, description, link')
       .single();
     if (error) throw error;
     return data;

@@ -171,10 +171,11 @@ export function ResumeUpload() {
         description: "Your resume has been uploaded and parsed. Redirecting to confirmation page...",
       });
       
-      localStorage.setItem('parsed_resume', JSON.stringify(data));
-      setTimeout(() => {
-        router.push('/upload/confirm');
-      }, 1500);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(`parsed-resume-${data.file_path}`, JSON.stringify(data));
+      }
+      
+      router.push(`/upload/confirm?file=${encodeURIComponent(data.file_path)}`);
       
     } catch (error) {
       toast({

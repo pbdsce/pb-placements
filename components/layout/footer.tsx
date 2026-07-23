@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { Code2, Github, Linkedin, Mail, Twitter } from "lucide-react";
+import {Mail} from "lucide-react";
+import { FaXTwitter,FaLinkedin,FaGithub} from "react-icons/fa6";
 import Logo from "../ui/logo"; 
 
 export function Footer() {
   return (
     <footer className="border-t bg-background/95">
-      <div className="px-8 py-12 md:py-16 w-screen-md">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 w-full">
+      <div className="max-w-7xl mx-auto px-8 py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Brand Section */}
           <div className="flex flex-col gap-4">
             <div className="shrink-0 mr-4">
@@ -17,21 +18,21 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-4">
               <Link
-                href="https://github.com/pbdsce"
+                href="https://github.com/pointblank-club"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Github className="h-5 w-5" />
+                <FaGithub className="h-5 w-5" />
                 <span className="sr-only">GitHub</span>
               </Link>
               <Link
-                href="https://www.linkedin.com/company/point-blank-d/posts/?feedView=all"
+                href="https://www.linkedin.com/company/pointblank-club/posts/?feedView=all"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Linkedin className="h-5 w-5" />
+                <FaLinkedin className="h-5 w-5" />
                 <span className="sr-only">LinkedIn</span>
               </Link>
               <Link
@@ -40,14 +41,14 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Twitter className="h-5 w-5" />
+                <FaXTwitter className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </Link>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 md:justify-self-center">
             <h3 className="text-sm font-semibold">Quick Links</h3>
             <nav className="flex flex-col gap-2">
               <Link
@@ -103,7 +104,7 @@ export function Footer() {
           </div> */}
 
           {/* Contact */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 md:justify-self-end">
             <h3 className="text-sm font-semibold">Contact</h3>
             <div className="flex flex-col gap-2">
               <Link

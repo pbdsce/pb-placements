@@ -10,6 +10,7 @@ import {
   ProjectService,
 } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { profileUpdateSchema } from '@/lib/validations/profile-update';
 
 const createAuthenticatedClient = (token: string): SupabaseClient => {
   return createClient(
@@ -42,16 +43,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const rawBody = await req.json();
+
+    const result = profileUpdateSchema.safeParse(rawBody);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: result.error.flatten().fieldErrors,
+          issues: result.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       member,
-      skills = [],
-      experiences = [],
-      achievements = [],
-      links = [],
-      certifications = [],
-      projects = [],
+      skills,
+      experiences,
+      achievements,
+      links,
+      certifications,
+      projects,
       resume_url,
-    } = await req.json();
+    } = result.data;
 
     const memberData = { ...member, id: user.id };
     if (resume_url) {

@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-and-test:
-    if: github.repository == 'pbdsce/pb-placements'
+    if: github.repository == 'pointblank-club/pb-placements'
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: 18.x

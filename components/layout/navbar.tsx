@@ -87,11 +87,11 @@ export function Navbar() {
  
  return (
   <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-    <div className="flex h-16 items-center justify-between px-4 md:px-8">
+    <div className="flex h-16 items-center justify-between px-4 max-[260px]:px-2 md:px-8">
       {/* Logo */}
-      <div className="shrink-0 mr-4">
-            <Logo />
-          </div>
+      <div className="min-w-0 shrink mr-4 max-[260px]:mr-2">
+        <Logo />
+      </div>
 
       {/* Desktop nav */}
       <div className="hidden md:flex items-start space-x-8 text-sm font-medium flex-1 px-4">
@@ -147,11 +147,12 @@ export function Navbar() {
       </div>
 
       {/* Mobile hamburger */}
-      <div className="md:hidden">
+      <div className="md:hidden shrink-0">
         <Button
           ref={toggleRef}
           variant="ghost"
           size="icon"
+          className="max-[260px]:h-8 max-[260px]:w-8"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => setMenuOpen((prev) => !prev)}
         >

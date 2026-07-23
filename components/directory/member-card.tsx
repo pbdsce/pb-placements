@@ -103,15 +103,15 @@ export function MemberCard({ member, isSelected, onSelect, selectionMode, search
             <div>
               <Link 
                 href={memberUrl(member.name, member.id)}
-                className="font-semibold text-lg hover:underline hover:text-green-500 transition-colors flex items-center"
+                className="font-semibold text-lg hover:underline hover:text-green-500 transition-colors flex flex-wrap items-center break-words"
               >
-                {member.name}
+                <span className="break-words">{member.name}</span>
                 <ArrowUpRight className={cn(
-                  "h-4 w-4 ml-1 transition-all duration-300",
+                  "h-4 w-4 ml-1 transition-all duration-300 shrink-0",
                   isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1"
                 )} />
               </Link>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 {member.domain && (
                   <Badge variant="secondary" className="rounded-full text-xs font-normal">
                     {member.domain}

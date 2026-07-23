@@ -42,15 +42,15 @@ export function ExperienceSection({ experiences, isEditable }: ExperienceSection
         const dateRange = `${formattedStartDate} - ${formattedEndDate}`;
         
         return (
-          <div key={experience.id} className="border-b border-gray-800 pb-4 last:border-0 last:pb-0">
-            <h3 className="text-base font-semibold text-white">{experience.title}</h3>
-            <p className="text-green-400 text-sm mt-1">{experience.company}</p>
-            <p className="text-xs text-gray-400 mt-1 flex justify-between">
-              <span>{experience.role}</span>
-              <span>{dateRange}</span>
+          <div key={experience.id} className="min-w-0 border-b border-gray-800 pb-4 last:border-0 last:pb-0">
+            <h3 className="break-words text-base font-semibold text-white max-[270px]:text-sm">{experience.title}</h3>
+            <p className="mt-1 break-words text-sm text-green-400 max-[270px]:text-xs">{experience.company}</p>
+            <p className="mt-1 flex min-w-0 justify-between gap-2 text-xs text-gray-400 max-[270px]:flex-col max-[270px]:gap-1">
+              <span className="break-words">{experience.role}</span>
+              <span className="shrink-0">{dateRange}</span>
             </p>
             {experience.description && (
-              <ul className="list-disc list-inside text-gray-300 text-sm mt-2 space-y-1">
+              <ul className="mt-2 list-inside list-disc space-y-1 break-words text-sm text-gray-300 max-[270px]:text-xs">
                 {experience.description
                   .split(/[•·‣●◦⁃∙]\s*/g)  
                   .map((point: string, index: number) =>

@@ -38,10 +38,10 @@ export function CertificationSection({ certifications }: CertificationSectionPro
               key={certification.id}
               className="border rounded-lg p-4 space-y-3"
             >
-              <h4 className="font-semibold text-lg text-white">{certification.name}</h4>
+              <h4 className="break-words font-semibold text-lg text-white">{certification.name}</h4>
 
               {certification.issuing_organization && (
-                <p className="text-green-400 text-sm">
+                <p className="break-words text-green-400 text-sm">
                   {certification.issuing_organization}
                 </p>
               )}
@@ -53,7 +53,7 @@ export function CertificationSection({ certifications }: CertificationSectionPro
               )}
 
               {certification.description && (
-                <p className="text-gray-300 text-sm">{certification.description}</p>
+                <p className="break-words text-gray-300 text-sm">{certification.description}</p>
               )}
             </div>
           ))}

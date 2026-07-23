@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized: No token' }, { status: 401 });
     }
 
-
     const supabase = createAuthenticatedClient(token);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -33,24 +32,74 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const resumeFile = formData.get('resume') as File | null;
+    const contentType = request.headers.get('content-type') || '';
+    let fileBuffer: ArrayBuffer;
+    let isReparse = false;
+    let existingFilePath: string | null = null;
 
-    if (!resumeFile) {
-      return NextResponse.json({ success: false, message: 'No resume file provided' }, { status: 400 });
+    if (contentType.includes('application/json')) {
+      // Reparse mode
+      isReparse = true;
+      const body = await request.json();
+      const { filePath } = body;
+
+      if (!filePath) {
+        return NextResponse.json({ success: false, message: 'No filePath provided' }, { status: 400 });
+      }
+
+      // Normalize path segments to prevent /../ traversal bypasses
+      const normalisedPath = filePath
+        .split('/')
+        .reduce((acc: string[], seg: string) => {
+          if (seg === '..') acc.pop();
+          else if (seg !== '.') acc.push(seg);
+          return acc;
+        }, [] as string[])
+        .join('/');
+
+      const expectedPrefix = `resumes/${user.id}/`;
+      if (!normalisedPath.startsWith(expectedPrefix)) {
+        return NextResponse.json({ success: false, message: 'Unauthorized access to resume file' }, { status: 403 });
+      }
+
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('resume')
+        .download(normalisedPath);
+
+      if (downloadError || !fileData) {
+        console.error('Error downloading resume from Supabase Storage:', downloadError);
+        return NextResponse.json({ success: false, message: 'Failed to download resume file' }, { status: 500 });
+      }
+
+      fileBuffer = await fileData.arrayBuffer();
+      existingFilePath = normalisedPath;
+    } else {
+      // Upload mode
+      const formData = await request.formData();
+      const resumeFile = formData.get('resume') as File | null;
+
+      if (!resumeFile) {
+        return NextResponse.json({ success: false, message: 'No resume file provided' }, { status: 400 });
+      }
+
+      if (resumeFile.type !== 'application/pdf') {
+        return NextResponse.json({ success: false, message: 'Only PDF files are supported' }, { status: 400 });
+      }
+
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ success: false, message: 'File size exceeds 5MB limit' }, { status: 400 });
+      }
+
+      fileBuffer = await resumeFile.arrayBuffer();
     }
 
-    if (resumeFile.type !== 'application/pdf') {
-      return NextResponse.json({ success: false, message: 'Only PDF files are supported' }, { status: 400 });
+    // Common PDF parsing for both modes
+    const headerBytes = new Uint8Array(fileBuffer).slice(0, 5);
+    const isPdf = Buffer.from(headerBytes).toString('ascii') === '%PDF-';
+    if (!isPdf) {
+      return NextResponse.json({ success: false, message: 'Invalid PDF file' }, { status: 400 });
     }
-
-    if (resumeFile.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ success: false, message: 'File size exceeds 5MB limit' }, { status: 400 });
-    }
-
-    const fileBuffer = await resumeFile.arrayBuffer();
     let parsedData: any;
-    
     try {
       const { text: extractedText, links: extractedLinks } = await extractTextFromPDF(fileBuffer);
       if (!extractedText?.trim()) {
@@ -64,7 +113,19 @@ export async function POST(request: NextRequest) {
       console.error('Error parsing resume:', parseError);
       return NextResponse.json({ success: false, message: 'Failed to parse resume.' }, { status: 400 });
     }
-    
+
+    if (isReparse) {
+      const publicResumeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/resume/${existingFilePath}`;
+      parsedData.resume_url = publicResumeUrl;
+
+      return NextResponse.json({
+        success: true,
+        file_path: existingFilePath,
+        ...parsedData,
+      });
+    }
+
+    // Upload mode specific: Enforce limit and upload
     const username = user.user_metadata?.username || user.email?.split('@')[0] || user.id;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const userFolder = `resumes/${user.id}`;

@@ -194,16 +194,16 @@ try {
   };
   
   return (
-    <div className="flex flex-col lg:flex-row items-center gap-2 w-full sm:w-auto">
+    <div className="flex w-full flex-col items-stretch gap-2 lg:w-auto lg:flex-row lg:items-center">
       <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-        <Button onClick={handleSendEmail} className="bg-green-500 hover:bg-green-600 gap-2">
-              <Mail className="h-4 w-4 mr-2" />
+        <Button onClick={handleSendEmail} className="w-full gap-2 bg-green-500 px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
+              <Mail className="h-4 w-4 shrink-0" />
               Send Email
             </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="bg-green-500 hover:bg-green-600 gap-2">
-              <Download className="h-4 w-4" />
+            <Button className="w-full gap-2 bg-green-500 px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
+              <Download className="h-4 w-4 shrink-0" />
               Export Profile
             </Button>
           </DropdownMenuTrigger>

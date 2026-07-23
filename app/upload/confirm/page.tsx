@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from 'uuid';
-import { createClient } from '@supabase/supabase-js';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
@@ -145,7 +143,9 @@ function ConfirmPageContent() {
       name: data.name || '',
       email: data.email || '',
       domain: data.domain || '',
-      year_of_study: (data.year_of_study || data.year)?.toString() || '',
+      year_of_study: data.year_of_study === null
+        ? 'alumni'
+        : (data.year_of_study || data.year)?.toString() || '',
       github_url: githubLink,
       linkedin_url: linkedinLink,
       experiences: experiences,
@@ -159,74 +159,110 @@ function ConfirmPageContent() {
 
   useEffect(() => {
     const init = async () => {
-    const editMode = searchParams.get('edit') === 'true';
-    const memberId = searchParams.get('memberId');
+      const file = searchParams.get('file');
+      const editMode = searchParams.get('edit') === 'true';
 
-    await setIsEditMode(editMode);
-    await setExistingMemberId(memberId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to edit your profile.',
+          variant: 'destructive',
+        });
+        router.push('/login');
+        return;
+      }
 
-    if (editMode && memberId) {
-      await loadExistingProfile(memberId);
-      return;
-    }
+      const memberId = session.user.id;
+      setIsEditMode(editMode);
+      setExistingMemberId(memberId);
 
-    try {
-      const encodedData = searchParams?.get('data');
-      if (encodedData) {
-        const decodedData = decodeURIComponent(encodedData);
-        const parsedData = JSON.parse(atob(decodedData));
-        
-        const uploadTime = parsedData.uploadTimestamp;
-        const currentTime = Date.now();
-        if (currentTime - uploadTime > 5 * 60 * 1000) {
-          throw new Error('Session expired. Please upload your resume again.');
+      // Case 1: Edit mode, no file param -> Skip resume parsing entirely.
+      if (editMode && !file) {
+        try {
+          await loadExistingProfile(memberId);
+        } catch (err: any) {
+          console.error('Error loading profile in edit mode:', err);
         }
-        
-        populateFormAndParsedData(parsedData, parsedData.id || '');
-        setLoading(false);
         return;
       }
 
-      const parsed = localStorage.getItem('parsed_resume');
-      if (parsed) {
-        const data = JSON.parse(parsed);
-        populateFormAndParsedData(data, data.id || '');
-        setLoading(false);
+      // Case 2: File param present -> Check cache or parse.
+      if (file) {
+        try {
+          let parsedData: any = null;
+
+          // Check sessionStorage for cached parsed data
+          if (typeof window !== 'undefined') {
+            const cached = sessionStorage.getItem(`parsed-resume-${file}`);
+            if (cached) {
+              try {
+                parsedData = JSON.parse(cached);
+              } catch (e) {
+                console.error('Failed to parse cached resume data:', e);
+              }
+            }
+          }
+
+          if (!parsedData) {
+            // Cache miss: fall back to reparse via /api/resume/upload
+            const reparseRes = await fetch('/api/resume/upload', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ filePath: file }),
+            });
+
+            if (!reparseRes.ok) {
+              const err = await reparseRes.json().catch(() => ({}));
+              throw new Error(err.message || 'Failed to parse resume');
+            }
+
+            parsedData = await reparseRes.json();
+          }
+
+          if (editMode) {
+            const existingProfile = await loadExistingProfile(memberId, true);
+            const mergedData = {
+              ...existingProfile,
+              ...parsedData,
+              picture_url: existingProfile?.picture_url || parsedData.picture_url,
+              resume_url: parsedData.resume_url || existingProfile?.resume_url,
+            };
+            populateFormAndParsedData(mergedData, memberId);
+            if (existingProfile?.picture_url) setPicturePreview(existingProfile.picture_url);
+          } else {
+            populateFormAndParsedData(parsedData, parsedData.id || '');
+          }
+
+          setLoading(false);
+        } catch (err: any) {
+          console.error('Resume loading error:', err);
+          toast({
+            title: 'Error',
+            description: err.message || 'Could not load resume data. Please re-upload your resume.',
+            variant: 'destructive',
+          });
+          setTimeout(() => router.push('/upload'), 3000);
+        }
         return;
       }
 
-      const tempStorage = document.getElementById('temp-resume-data');
-      if (tempStorage?.textContent) {
-        const parsedData = JSON.parse(tempStorage.textContent);
-        populateFormAndParsedData(parsedData, parsedData.id || '');
-        tempStorage.remove();
-        setLoading(false);
-        return;
-      }
-
-      throw new Error('No resume data found');
-
-    } catch (err) {
-      console.error('Resume loading error:', err);
-
-      const message = err instanceof Error
-        ? err.message
-        : 'Could not load resume data. Please re-upload your resume.';
-      
+      // Case 3: Neither edit mode nor file param -> Error + redirect to /upload.
       toast({
         title: 'Error',
-        description: message,
+        description: 'No resume file specified. Please upload your resume again.',
         variant: 'destructive',
       });
-      
-      setTimeout(() => router.push('/upload'), 3000);
-    }
-  };
+      setTimeout(() => router.push('/upload'), 2000);
+    };
 
-  init();
-}, [router, searchParams]);
+    init();
+  }, [router, searchParams]);
 
-  const loadExistingProfile = async (memberId: string) => {
+  const loadExistingProfile = async (memberId: string, skipPopulate = false) => {
     try {
       const [
         memberRes,
@@ -235,6 +271,7 @@ function ConfirmPageContent() {
         achievementsRes,
         linksRes,
         certificationsRes,
+        projectsRes,
       ] = await Promise.all([
         fetch(`/api/member/profile/${memberId}`),
         fetch(`/api/member/skills/${memberId}`),
@@ -242,16 +279,18 @@ function ConfirmPageContent() {
         fetch(`/api/member/achievements/${memberId}`),
         fetch(`/api/member/links/${memberId}`),
         fetch(`/api/member/certifications/${memberId}`),
+        fetch(`/api/member/projects/${memberId}`),
       ]);
 
       if (!memberRes.ok) throw new Error('Failed to load member data');
 
       const memberData = await memberRes.json();
-      const skillsData = await skillsRes.ok ? await skillsRes.json() : [];
-      const experiencesData = await experiencesRes.ok ? await experiencesRes.json() : [];
-      const achievementsData = await achievementsRes.ok ? await achievementsRes.json() : [];
-      const linksData = await linksRes.ok ? await linksRes.json() : [];
- const certificationsData = await certificationsRes.ok ? await certificationsRes.json() : [];
+      const skillsData = skillsRes.ok ? await skillsRes.json() : [];
+      const experiencesData = experiencesRes.ok ? await experiencesRes.json() : [];
+      const achievementsData = achievementsRes.ok ? await achievementsRes.json() : [];
+      const linksData = linksRes.ok ? await linksRes.json() : [];
+      const certificationsData = certificationsRes.ok ? await certificationsRes.json() : [];
+      const projectsData = projectsRes.ok ? await projectsRes.json() : [];
 
       const combinedData = {
         ...memberData,
@@ -259,16 +298,19 @@ function ConfirmPageContent() {
         experiences: experiencesData,
         achievements: achievementsData,
         links: linksData,
-           certifications: certificationsData,
-     
+        certifications: certificationsData,
+        projects: projectsData,
       };
 
-      populateFormAndParsedData(combinedData, memberId);
-      if (memberData.picture_url) {
-        setPicturePreview(memberData.picture_url);
+      if (!skipPopulate) {
+        populateFormAndParsedData(combinedData, memberId);
+        if (memberData.picture_url) {
+          setPicturePreview(memberData.picture_url);
+        }
+        setLoading(false);
       }
 
-      setLoading(false);
+      return combinedData;
     } catch (error) {
       console.error('Error loading existing profile:', error);
       toast({

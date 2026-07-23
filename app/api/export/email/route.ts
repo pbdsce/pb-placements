@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
     }
 
     const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_DOMAIN || 'https://careers.pointblank.club').replace(/\/$/, '');
-    const profileUrl = memberUrl(member.name, member.id, 'profile', siteUrl);
-    const resumeUrl = memberUrl(member.name, member.id, 'resume', siteUrl);
+    const profileUrl = memberUrl(member.name, memberId, 'profile', siteUrl);
+    const resumeUrl = memberUrl(member.name, memberId, 'resume', siteUrl);
     const subject = `Recommendation: ${memberName} from Point Blank`;
 
     const body = `

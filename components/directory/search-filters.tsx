@@ -42,6 +42,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
   // State for year search
   const [yearSearch, setYearSearch] = useState("");
   const [yearOpen, setYearOpen] = useState(false);
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false);
   
   // Filtered skills for dropdown
   const filteredSkills = allSkills.filter(skill =>
@@ -109,6 +110,16 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
       applyFilters();
     }
   };
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 380px)");
+    const updatePlaceholder = () => setIsVerySmallScreen(mediaQuery.matches);
+
+    updatePlaceholder();
+    mediaQuery.addEventListener("change", updatePlaceholder);
+
+    return () => mediaQuery.removeEventListener("change", updatePlaceholder);
+  }, []);
   
   // Apply filters when search term changes
   useEffect(() => {
@@ -128,10 +139,10 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
   
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 md:flex-row">
+        <div className="relative min-w-0 md:flex-1">
           <Input
-            placeholder="Search by name or skill..."
+            placeholder={isVerySmallScreen ? "Search" : "Search by name or skill..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -151,7 +162,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
             </Button>
           )}
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-3 md:flex md:flex-wrap md:items-center md:justify-end">
           {/* Skills Popover with Search Bar and Dropdown */}
           <Popover open={skillsOpen} onOpenChange={setSkillsOpen}>
             <PopoverTrigger asChild>
@@ -159,7 +170,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={skillsOpen}
-                className="justify-between min-w-[120px]"
+                className="w-full justify-between md:w-auto md:min-w-[120px]"
               >
                 Skills
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -201,7 +212,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={domainOpen}
-                className="justify-between min-w-[120px]"
+                className="w-full justify-between md:w-auto md:min-w-[120px]"
               >
                 Domain
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -243,7 +254,7 @@ export function SearchFilters({ allSkills, domains, years }: SearchFiltersProps)
                 variant="outline"
                 role="combobox"
                 aria-expanded={yearOpen}
-                className="justify-between min-w-[120px]"
+                className="w-full justify-between md:w-auto md:min-w-[120px]"
               >
                 Year
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
