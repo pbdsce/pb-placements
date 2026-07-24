@@ -493,7 +493,7 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
           >
             Back
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-green-500 hover:bg-green-600">
+          <Button type="submit" disabled={isSubmitting} className="bg-green-500 text-black hover:bg-green-600">
             {isSubmitting ? "Saving..." : "Save Profile"}
           </Button>
         </CardFooter>

@@ -64,7 +64,7 @@ const Card = ({ img, name }: { img: string; name: string }) => {
 
 export default function Domains() {
   return (
-    <div className="relative mb-10">
+    <div className="relative mb-10 w-full bg-[#1B1B1B] py-10">
       <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-center text-gray-200 m-4">
         Domains we ❤️
       </h2>

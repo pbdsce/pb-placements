@@ -79,6 +79,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  body:has([data-homepage-shell]) {
+    background-color: #000;
+  }
 }
 
 /* Animated gradient blobs for hero section background */

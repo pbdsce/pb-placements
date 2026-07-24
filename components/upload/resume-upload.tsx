@@ -302,7 +302,7 @@ export function ResumeUpload() {
                     </Button>
                     <Button
                       onClick={handleUpload}
-                      className="bg-green-500 hover:bg-green-600"
+                      className="bg-green-500 text-black hover:bg-green-600"
                     >
                       <Upload className="h-4 w-4 mr-1" />
                       {userExists ? 'Update Resume' : 'Upload Resume'}
@@ -336,7 +336,7 @@ export function ResumeUpload() {
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
-                        className="h-full bg-green-500"
+                        className="h-full bg-green-500 text-black"
                         initial={{ width: "0%" }}
                         animate={{ width: `${uploadProgress}%` }}
                         transition={{ ease: "easeInOut" }}

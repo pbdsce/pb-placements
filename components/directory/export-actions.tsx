@@ -241,7 +241,7 @@ export function ExportActions({ selectedMembers, clearSelections }: ExportAction
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="rounded-full bg-green-500 hover:bg-green-600">
+          <Button className="rounded-full bg-green-500 text-black hover:bg-green-600">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>

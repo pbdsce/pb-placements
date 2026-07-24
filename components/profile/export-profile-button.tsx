@@ -196,13 +196,13 @@ try {
   return (
     <div className="flex w-full flex-col items-stretch gap-2 lg:w-auto lg:flex-row lg:items-center">
       <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-        <Button onClick={handleSendEmail} className="w-full gap-2 bg-green-500 px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
+        <Button onClick={handleSendEmail} className="w-full gap-2 bg-green-500 text-black px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
               <Mail className="h-4 w-4 shrink-0" />
               Send Email
             </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="w-full gap-2 bg-green-500 px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
+            <Button className="w-full gap-2 bg-green-500 text-black px-3 hover:bg-green-600 max-[270px]:px-2 max-[270px]:text-xs lg:w-auto">
               <Download className="h-4 w-4 shrink-0" />
               Export Profile
             </Button>

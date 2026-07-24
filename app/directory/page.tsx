@@ -377,7 +377,7 @@ Best regards,
                 <DropdownMenuTrigger asChild>
                   <Button 
                     size="sm" 
-                    className="bg-green-500 hover:bg-green-600"
+                    className="bg-green-500 text-black hover:bg-green-600"
                     disabled={isExporting}
                   >
                     <Download className="h-4 w-4 mr-2" />

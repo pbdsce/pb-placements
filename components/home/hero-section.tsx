@@ -34,7 +34,7 @@ export function HeroSection() {
             className="space-y-3 md:space-y-4"
           >
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter leading-tight">
-              Find <span className="text-green-500">Student Developers</span> for Your Next Project
+              Find <span className="text-[#37FF00]">Student Developers</span> for Your Next Project
             </h1>
             <p className="max-w-[32rem] md:max-w-[42rem] text-base sm:text-lg md:text-xl text-muted-foreground mx-auto px-4">
               Point Blank is a community of talented student developers. Search our directory to discover skilled developers for your team.
@@ -50,7 +50,7 @@ export function HeroSection() {
           >
             <div className="relative flex-1 bg-gradient-to-r from-green-400 via-green-500 to-green-600 p-[2px] rounded-full shadow-[0_0_8px_1px_rgba(34,197,94,0.25)]">
               <div className="flex items-center bg-black rounded-full pl-2 sm:pl-3 md:pl-4 h-10 sm:h-12 w-full">
-                <Search className="h-4 w-4 sm:h-5 sm:w-5 text-green-300 mr-2 sm:mr-3 flex-shrink-0" />
+                <Search className="h-4 w-4 sm:h-5 sm:w-5 text-[#37FF00] mr-2 sm:mr-3 flex-shrink-0" />
                 <input
                   type="search"
                   placeholder="Search by skill, domain, or name..."
@@ -60,7 +60,7 @@ export function HeroSection() {
                 />
                 <button
                   type="submit"
-                  className="ml-2 sm:ml-3 h-10 sm:h-12 px-2 sm:px-3 md:px-4 lg:px-6 rounded-full bg-green-500 hover:bg-green-600 text-white font-semibold transition text-[10px] sm:text-xs md:text-sm lg:text-base flex-shrink-0 whitespace-nowrap"
+                  className="ml-2 sm:ml-3 h-10 sm:h-12 px-2 sm:px-3 md:px-4 lg:px-6 rounded-full bg-[#37FF00] hover:bg-[#30e600] text-white font-semibold transition text-[10px] sm:text-xs md:text-sm lg:text-base flex-shrink-0 whitespace-nowrap"
                 >
                   Search
                 </button>

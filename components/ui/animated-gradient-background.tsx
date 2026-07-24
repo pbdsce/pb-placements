@@ -1,88 +1,215 @@
 "use client";
-import React, { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
 
 export function AnimatedGradientBackground() {
-  const blobsRef = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const primaryBlobRef = useRef<HTMLDivElement | null>(null);
+  const secondaryBlobRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const isMobile = window.innerWidth <= 640;
-    const keyframes = [
-      [ // Blob 1 (left)
-        { left: "0%", top: "18%" },
-        { left: "18%", top: "40%" },
-        { left: "10%", top: isMobile ? "80%" : "50%" },
-      ],
-      [ // Blob 2 (center-left)
-        { left: "32%", top: "22%" },
-        { left: "22%", top: "55%" },
-        { left: "28%", top: isMobile ? "80%" : "55%" },
-      ],
-      [ // Blob 3 (center-right, less prominent)
-        { left: "60%", top: "25%" },
-        { left: "70%", top: "50%" },
-        { left: "45%", top: isMobile ? "65%" : "50%" },
-      ],
-      [ // Blob 4 (right)
-        { left: "78%", top: "20%" },
-        { left: "60%", top: "60%" },
-        { left: "82%", top: isMobile ? "65%" : "50%" },
-      ],
-    ];
+    const container = containerRef.current;
+    const primaryBlob = primaryBlobRef.current;
+    const secondaryBlob = secondaryBlobRef.current;
 
-    blobsRef.current.forEach((blob, i) => {
-      if (!blob) return;
-      // Set initial position
-      gsap.set(blob, keyframes[i][0]);
-      // Animate through keyframes on scroll (single tween with keyframes)
-      gsap.to(blob, {
-        keyframes: [
-          { left: keyframes[i][1].left, top: keyframes[i][1].top, ease: "power1.inOut" },
-          { left: keyframes[i][2].left, top: keyframes[i][2].top, ease: "power1.inOut" },
-        ],
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1,
+    if (!container || !primaryBlob || !secondaryBlob) return;
+
+    const media = gsap.matchMedia();
+
+    const context = gsap.context(() => {
+      /*
+       * Desktop:
+       * Both blobs follow the cursor at different speeds.
+       */
+      media.add(
+        "(min-width: 768px) and (pointer: fine)",
+        () => {
+          const defaultX = window.innerWidth / 2;
+          const defaultY = window.innerHeight * 0.4;
+
+          gsap.set([primaryBlob, secondaryBlob], {
+            xPercent: -50,
+            yPercent: -50,
+          });
+
+          gsap.set(primaryBlob, {
+            x: defaultX,
+            y: defaultY,
+            opacity: 0.8,
+          });
+
+          gsap.set(secondaryBlob, {
+            x: defaultX,
+            y: defaultY,
+            opacity: 0.55,
+          });
+
+          const movePrimaryX = gsap.quickTo(primaryBlob, "x", {
+            duration: 0.3,
+            ease: "power3.out",
+          });
+
+          const movePrimaryY = gsap.quickTo(primaryBlob, "y", {
+            duration: 0.3,
+            ease: "power3.out",
+          });
+
+          const moveSecondaryX = gsap.quickTo(secondaryBlob, "x", {
+            duration: 1,
+            ease: "power3.out",
+          });
+
+          const moveSecondaryY = gsap.quickTo(secondaryBlob, "y", {
+            duration: 1,
+            ease: "power3.out",
+          });
+
+          const handlePointerMove = (event: PointerEvent) => {
+            movePrimaryX(event.clientX);
+            movePrimaryY(event.clientY);
+
+            moveSecondaryX(event.clientX);
+            moveSecondaryY(event.clientY);
+          };
+
+          const handlePointerLeave = () => {
+            gsap.to(primaryBlob, {
+              opacity: 0.55,
+              duration: 0.4,
+            });
+
+            gsap.to(secondaryBlob, {
+              opacity: 0.35,
+              duration: 0.5,
+            });
+          };
+
+          const handlePointerEnter = () => {
+            gsap.to(primaryBlob, {
+              opacity: 0.8,
+              duration: 0.3,
+            });
+
+            gsap.to(secondaryBlob, {
+              opacity: 0.55,
+              duration: 0.3,
+            });
+          };
+
+          window.addEventListener("pointermove", handlePointerMove);
+          document.documentElement.addEventListener(
+            "mouseleave",
+            handlePointerLeave,
+          );
+          document.documentElement.addEventListener(
+            "mouseenter",
+            handlePointerEnter,
+          );
+
+          return () => {
+            window.removeEventListener("pointermove", handlePointerMove);
+            document.documentElement.removeEventListener(
+              "mouseleave",
+              handlePointerLeave,
+            );
+            document.documentElement.removeEventListener(
+              "mouseenter",
+              handlePointerEnter,
+            );
+          };
         },
-      });
-      // Animate scale and movement for organic effect
-      gsap.to(blob, {
-        scale: () => gsap.utils.random(0.9, i === 2 ? 1.05 : 1.2), // yellow blob smaller
-        rotate: () => gsap.utils.random(-10, 10),
-        duration: gsap.utils.random(6, 12),
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        delay: i * 1.5,
-      });
-    });
+      );
+
+      /*
+       * Mobile/tablet:
+       * No cursor, so two blobs move up and down continuously.
+       */
+      media.add(
+        "(max-width: 767px), (pointer: coarse)",
+        () => {
+          gsap.set(primaryBlob, {
+            xPercent: -50,
+            yPercent: -50,
+            left: "20%",
+            top: "25%",
+            opacity: 0.7,
+          });
+
+          gsap.set(secondaryBlob, {
+            xPercent: -50,
+            yPercent: -50,
+            left: "80%",
+            top: "75%",
+            opacity: 0.5,
+          });
+
+          const primaryAnimation = gsap.to(primaryBlob, {
+            y: "28vh",
+            x: "8vw",
+            scale: 1.12,
+            duration: 7,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+
+          const secondaryAnimation = gsap.to(secondaryBlob, {
+            y: "-32vh",
+            x: "-10vw",
+            scale: 1.15,
+            duration: 9,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+
+          return () => {
+            primaryAnimation.kill();
+            secondaryAnimation.kill();
+          };
+        },
+      );
+    }, container);
+
+    return () => {
+      media.revert();
+      context.revert();
+
+      gsap.killTweensOf(primaryBlob);
+      gsap.killTweensOf(secondaryBlob);
+    };
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <div
+      ref={containerRef}
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    >
+      {/* Main bright green blob */}
       <div
-        ref={el => (blobsRef.current[0] = el)}
-        className="gradient-blob bg-green-400"
+        ref={primaryBlobRef}
+        className="absolute left-0 top-0 h-[75vmax] w-[75vmax] rounded-full will-change-transform md:h-[55vmax] md:w-[55vmax]"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(55,255,0,0.7) 0%, rgba(48,230,0,0.38) 30%, rgba(36,201,0,0.14) 55%, transparent 72%)",
+          filter: "blur(clamp(3rem, 8vw, 8rem))",
+        }}
       />
+
+      {/* Darker trailing blob */}
       <div
-        ref={el => (blobsRef.current[1] = el)}
-        className="gradient-blob bg-green-600"
+        ref={secondaryBlobRef}
+        className="absolute left-0 top-0 h-[90vmax] w-[90vmax] rounded-full will-change-transform md:h-[70vmax] md:w-[70vmax]"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(36,201,0,0.5) 0%, rgba(22,138,0,0.3) 35%, rgba(22,138,0,0.1) 58%, transparent 74%)",
+          filter: "blur(clamp(4rem, 10vw, 10rem))",
+        }}
       />
-      <div
-        ref={el => (blobsRef.current[2] = el)}
-        className="gradient-blob bg-green-300"
-        style={{ opacity: 0.35 }} // less prominent
-      />
-      <div
-        ref={el => (blobsRef.current[3] = el)}
-        className="gradient-blob bg-green-700"
-      />
+
+      <div className="absolute inset-0 bg-black/15" />
     </div>
   );
-} 
+}

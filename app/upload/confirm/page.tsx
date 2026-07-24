@@ -945,7 +945,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <Button 
               type="submit" 
               disabled={saving} 
-              className="bg-green-500 hover:bg-green-600 text-white"
+              className="bg-green-500 text-black hover:bg-green-600"
             >
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {saving 

@@ -5,7 +5,7 @@ import Logo from "../ui/logo";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-background/95">
+    <footer className="relative z-20 bg-black">
       <div className="max-w-7xl mx-auto px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Brand Section */}

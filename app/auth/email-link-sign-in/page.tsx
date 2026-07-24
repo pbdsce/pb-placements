@@ -96,7 +96,7 @@ function SignInForm() {
             <CardFooter className="flex flex-col gap-4">
               <Button
                 type="submit"
-                className="w-full bg-green-500 hover:bg-green-600"
+                className="w-full bg-green-500 text-black hover:bg-green-600"
                 disabled={loading || linkSent}
               >
                 {loading
@@ -136,7 +136,7 @@ function SignInLoading() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full bg-green-500 hover:bg-green-600" disabled>
+            <Button className="w-full bg-green-500 text-black hover:bg-green-600" disabled>
               Loading...
             </Button>
           </CardFooter>
