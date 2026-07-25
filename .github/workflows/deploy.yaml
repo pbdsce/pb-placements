@@ -33,7 +33,7 @@ jobs:
           if [ "${{ github.ref_name }}" = "prod" ]; then
             echo "domain=https://careers.pointblank.club" >> "$GITHUB_OUTPUT"
           else
-            echo "domain=https://staging.careers.pointblank.club" >> "$GITHUB_OUTPUT"
+            echo "domain=https://staging-careers.pointblank.club" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
