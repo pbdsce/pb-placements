@@ -6,8 +6,10 @@ import type { NextRequest } from "next/server";
 // The cookie-backed client reads the code verifier set during sign-in and
 // writes the resulting session cookies onto the redirect response.
 export async function GET(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
+  const origin =
+    process.env.NEXT_PUBLIC_DOMAIN || "https://careers.pointblank.club";
   const next = searchParams.get("next") ?? "/";
 
   if (code) {
