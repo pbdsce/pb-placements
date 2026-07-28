@@ -508,7 +508,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         domain: formData.domain.trim(),
-        year_of_study: formData.year_of_study ? parseInt(formData.year_of_study) : null,
+        year_of_study: formData.year_of_study
+          ? formData.year_of_study === 'alumni'
+            ? 5
+            : parseInt(formData.year_of_study)
+          : null,
         picture_url: pictureUrl,
         resume_url: formData.resume_url,
       },
@@ -534,7 +538,22 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(errorData.error || 'Failed to save profile');
+      const validationMessages = Array.isArray(errorData.issues)
+        ? errorData.issues
+            .map((issue: { message?: string }) => issue.message)
+            .filter(Boolean)
+            .filter(
+              (message: string, index: number, messages: string[]) =>
+                messages.indexOf(message) === index,
+            )
+            .join('; ')
+        : '';
+
+      throw new Error(
+        validationMessages
+          ? `Please review your profile details: ${validationMessages}`
+          : errorData.error || 'Failed to save profile',
+      );
     }
 
     toast({
