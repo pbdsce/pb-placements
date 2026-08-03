@@ -2,7 +2,27 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const allowedOrigins = ['http://localhost:3000', 'https://careers.pointblank.club'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://careers.pointblank.club',
+  'https://staging-careers.pointblank.club',
+];
+
+const protectedRoutes = [
+  '/api/profile/update',
+  '/api/resume',
+  '/api/members',
+  '/api/experiences',
+  '/api/achievements',
+  '/api/links',
+  '/api/member-skills',
+];
+
+const bearerValidatedRoutes = [
+  '/api/profile/update',
+  '/api/resume/upload',
+  '/api/members',
+];
 
 function addCors(req: NextRequest, res: NextResponse): NextResponse {
   const origin = req.headers.get('origin');
@@ -20,6 +40,24 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith('/api/') && req.method === 'OPTIONS') {
     return addCors(req, new NextResponse(null, { status: 204 }));
+  }
+
+  const isResumeView = pathname.startsWith('/api/resume/view');
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+  const validatesBearerToken = bearerValidatedRoutes.some((route) => pathname.startsWith(route));
+  const hasBearerToken = req.headers.get('authorization')?.startsWith('Bearer ') ?? false;
+
+  // Public pages, including the sign-in page, do not need server-side auth
+  // refresh. Avoid emitting chunked Supabase session cookies on cacheable page
+  // responses, which can exceed the proxy response-header buffer. The sign-in
+  // page already redirects authenticated users from the browser auth store.
+  const shouldCheckAuth =
+    !isResumeView &&
+    isProtected && !(validatesBearerToken && hasBearerToken);
+
+  if (!shouldCheckAuth) {
+    const response = NextResponse.next({ request: req });
+    return pathname.startsWith('/api/') ? addCors(req, response) : response;
   }
 
   let res = NextResponse.next({ request: req });
@@ -43,52 +81,27 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // getUser() revalidates the token with the auth server (don't trust getSession
-  // in middleware) and refreshes cookies via setAll above.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedRoutes = [
-    '/api/profile/update',
-    '/api/resume',
-    '/api/members',
-    '/api/experiences',
-    '/api/achievements',
-    '/api/links',
-    '/api/member-skills',
-  ];
+  // Supabase may write refreshed auth cookies here. These responses must not
+  // be cached by Next.js, Cloudflare, or another proxy.
+  res.headers.set('Cache-Control', 'private, no-store');
 
-  // Carry any refreshed auth cookies onto a redirect response.
   const withAuthCookies = (redirect: NextResponse) => {
     res.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    redirect.headers.set('Cache-Control', 'private, no-store');
     return redirect;
   };
 
-  const getResponse = () => {
-    if (pathname.startsWith('/api/resume/view')) {
-      return res;
-    }
+  if (isProtected && !user) {
+    const redirectUrl = new URL('/auth/email-link-sign-in', req.url);
+    redirectUrl.searchParams.set('redirect', pathname);
+    return addCors(req, withAuthCookies(NextResponse.redirect(redirectUrl)));
+  }
 
-    const isProtected = protectedRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
-
-    if (isProtected && !user) {
-      const redirectUrl = new URL('/auth/email-link-sign-in', req.url);
-      redirectUrl.searchParams.set('redirect', pathname);
-      return withAuthCookies(NextResponse.redirect(redirectUrl));
-    }
-
-    if (pathname.startsWith('/auth') && user) {
-      return withAuthCookies(NextResponse.redirect(new URL('/', req.url)));
-    }
-
-    return res;
-  };
-
-  const response = getResponse();
-  return pathname.startsWith('/api/') ? addCors(req, response) : response;
+  return pathname.startsWith('/api/') ? addCors(req, res) : res;
 }
 
 export const config = {

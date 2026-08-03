@@ -11,16 +11,21 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get("code");
   const origin = getSiteOrigin(req);
   const next = searchParams.get("next") ?? "/";
+  const redirect = (url: string) => {
+    const response = NextResponse.redirect(url);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  };
 
   if (code) {
     const supabase = createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return redirect(`${origin}${next}`);
     }
   }
 
-  return NextResponse.redirect(
+  return redirect(
     `${origin}/auth/email-link-sign-in?error=auth_callback_failed`,
   );
 }
