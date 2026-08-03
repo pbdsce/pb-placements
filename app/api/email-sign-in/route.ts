@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSiteOrigin } from "@/lib/site-url";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_DOMAIN || "https://careers.pointblank.club"}/api/callback`,
+      emailRedirectTo: `${getSiteOrigin(req)}/api/callback`,
     },
   });
 
