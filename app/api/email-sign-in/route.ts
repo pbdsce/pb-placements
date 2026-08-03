@@ -1,17 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSiteOrigin } from "@/lib/site-url";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  const noStore = (response: NextResponse) => {
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  };
+
   const { email } = await req.json();
 
   if (!email || !email.endsWith("@pointblank.club")) {
-    return NextResponse.json(
+    return noStore(NextResponse.json(
       {
         success: false,
         message: "Access denied. Only @pointblank.club emails are allowed.",
       },
       { status: 403 },
-    );
+    ));
   }
 
   // Cookie-backed client: signInWithOtp stores the PKCE code verifier in a
@@ -22,17 +28,17 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_DOMAIN || "https://careers.pointblank.club"}/api/callback`,
+      emailRedirectTo: `${getSiteOrigin(req)}/api/callback`,
     },
   });
 
   if (error) {
     const status = error.status === 429 ? 429 : (error.status ?? 500);
-    return NextResponse.json(
+    return noStore(NextResponse.json(
       { success: false, message: error.message },
       { status },
-    );
+    ));
   }
 
-  return NextResponse.json({ success: true });
+  return noStore(NextResponse.json({ success: true }));
 }
