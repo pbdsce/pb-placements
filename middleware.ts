@@ -10,6 +10,7 @@ const allowedOrigins = [
 
 const protectedRoutes = [
   '/api/profile/update',
+  '/api/profile/delete',
   '/api/resume',
   '/api/members',
   '/api/experiences',

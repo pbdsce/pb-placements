@@ -213,6 +213,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     memberId={actualMemberId}
                     memberName={member.name}
                     memberEmail={member.email}
+                    isCurrentUser={isCurrentUser}
                   />
                 </div>
               </div>
