@@ -61,6 +61,64 @@ interface ParsedData {
   file_path?: string;
 }
 
+const validationFieldLabels: Record<string, string> = {
+  name: 'your name',
+  email: 'your email address',
+  domain: 'your domain',
+  year_of_study: 'your year of study',
+  picture_url: 'your profile picture URL',
+  resume_url: 'your resume URL',
+  company: 'the company name',
+  role: 'the role',
+  description: 'the description',
+  start_date: 'a start date',
+  end_date: 'an end date',
+  is_current: 'whether this experience is current',
+  url: 'the URL',
+  skills: 'your skills',
+  achievements: 'your achievements',
+  issuing_organization: 'the issuing organization',
+  link: 'the project URL',
+  member: 'your profile details',
+  experiences: 'your experiences',
+  certifications: 'your certifications',
+  projects: 'your projects',
+  links: 'your links',
+};
+
+function formatValidationIssue(issue: { path?: string; message?: string }): string | undefined {
+  const path = issue.path || '';
+  const field = path.split('.').pop() || '';
+  const index = path.match(/\.(\d+)\.(?:[^.]+)$/)?.[1];
+  const label = validationFieldLabels[field] || field.replace(/_/g, ' ') || 'this field';
+  const context = index ? `${label} for item ${Number(index) + 1}` : label;
+  const message = issue.message || 'This field is invalid.';
+
+  if (path === 'member.year_of_study') {
+    return 'Please select your year of study.';
+  }
+
+  if (field === 'start_date') {
+    return index
+      ? `Please provide a start date for experience ${Number(index) + 1}.`
+      : 'Please provide a start date.';
+  }
+
+  if (
+    /^Expected .+ received .+$/.test(message) ||
+    message === 'Required' ||
+    /required|cannot be empty/i.test(message)
+  ) {
+    return `Please provide ${context}.`;
+  }
+
+  if (/valid URL/i.test(message)) {
+    return `Please enter a valid URL for ${context}.`;
+  }
+
+  return message;
+}
+
 function ConfirmPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -540,7 +598,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       const errorData = await res.json();
       const validationMessages = Array.isArray(errorData.issues)
         ? errorData.issues
-            .map((issue: { message?: string }) => issue.message)
+            .map(formatValidationIssue)
             .filter(Boolean)
             .filter(
               (message: string, index: number, messages: string[]) =>

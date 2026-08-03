@@ -14,7 +14,10 @@ export const memberSchema = z.object({
     .max(200, 'Domain must be 200 characters or less')
     .default(''),
   year_of_study: z
-    .number()
+    .number({
+      required_error: 'Please select your year of study',
+      invalid_type_error: 'Please select your year of study',
+    })
     .int('Year of study must be an integer')
     .min(1, 'Year of study must be at least 1')
     .max(5, 'Year of study must be at most 4 or Alumni'),
@@ -36,7 +39,12 @@ export const experienceSchema = z.object({
     .min(1, 'Role cannot be empty')
     .max(200, 'Role too long'),
   description: z.string().max(2000, 'Description too long').default(''),
-  start_date: z.string().min(1, 'Start date is required'),
+  start_date: z
+    .string({
+      required_error: 'Start date cannot be empty',
+      invalid_type_error: 'Start date cannot be empty',
+    })
+    .min(1, 'Start date cannot be empty'),
   end_date: z.string().nullable().optional(),
   is_current: z.boolean().default(false),
 });
