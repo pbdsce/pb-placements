@@ -21,11 +21,15 @@ export async function GET(req: NextRequest) {
     const supabase = createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return redirect(`${origin}${next}`);
+      let redirectPath = next;
+      if (!redirectPath.startsWith('/careers')) {
+        redirectPath = `/careers${redirectPath.startsWith('/') ? '' : '/'}${redirectPath}`;
+      }
+      return redirect(`${origin}${redirectPath}`);
     }
   }
 
   return redirect(
-    `${origin}/auth/email-link-sign-in?error=auth_callback_failed`,
+    `${origin}/careers/auth/email-link-sign-in?error=auth_callback_failed`,
   );
 }
