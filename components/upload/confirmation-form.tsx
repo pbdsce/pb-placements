@@ -73,7 +73,7 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
       // Fetch existing projects
       let existingProjects: any[] = [];
       try {
-        const res = await fetch(`/api/member/projects/${user.id}`);
+        const res = await fetch(`/careers/api/member/projects/${user.id}`);
         if (res.ok) {
           existingProjects = await res.json();
         }

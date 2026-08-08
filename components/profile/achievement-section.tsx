@@ -29,7 +29,7 @@ export function AchievementSection({
     setAchievements(achievements.filter((ach) => ach.id !== achievementId));
 
     try {
-      const response = await fetch(`/api/member/achievements/${achievementId}`, {
+      const response = await fetch(`/careers/api/member/achievements/${achievementId}`, {
         method: "DELETE",
       });
 

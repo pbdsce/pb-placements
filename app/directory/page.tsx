@@ -118,7 +118,7 @@ function DirectoryContent() {
           queryParams.append('skills', skill);
         });
         queryParams.append('_t', Date.now().toString());
-        const response = await fetch(`/api/directory/search?${queryParams.toString()}`, {
+        const response = await fetch(`/careers/api/directory/search?${queryParams.toString()}`, {
           cache: 'reload',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',

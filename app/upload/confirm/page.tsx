@@ -331,13 +331,13 @@ function ConfirmPageContent() {
         certificationsRes,
         projectsRes,
       ] = await Promise.all([
-        fetch(`/api/member/profile/${memberId}`),
-        fetch(`/api/member/skills/${memberId}`),
-        fetch(`/api/member/experience/${memberId}`),
-        fetch(`/api/member/achievements/${memberId}`),
-        fetch(`/api/member/links/${memberId}`),
-        fetch(`/api/member/certifications/${memberId}`),
-        fetch(`/api/member/projects/${memberId}`),
+        fetch(`/careers/api/member/profile/${memberId}`),
+        fetch(`/careers/api/member/skills/${memberId}`),
+        fetch(`/careers/api/member/experience/${memberId}`),
+        fetch(`/careers/api/member/achievements/${memberId}`),
+        fetch(`/careers/api/member/links/${memberId}`),
+        fetch(`/careers/api/member/certifications/${memberId}`),
+        fetch(`/careers/api/member/projects/${memberId}`),
       ]);
 
       if (!memberRes.ok) throw new Error('Failed to load member data');
