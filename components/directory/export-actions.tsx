@@ -48,7 +48,7 @@ export function ExportActions({ selectedMembers, clearSelections }: ExportAction
   
   const handleExportPDF = async () => {
     try {
-      const response = await fetch("/api/export/pdf", {
+      const response = await fetch("/careers/api/export/pdf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +86,7 @@ export function ExportActions({ selectedMembers, clearSelections }: ExportAction
   
   const handleExportJSON = async () => {
     try {
-      const response = await fetch("/api/export/json", {
+      const response = await fetch("/careers/api/export/json", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -137,7 +137,7 @@ export function ExportActions({ selectedMembers, clearSelections }: ExportAction
   
   const handleSendEmail = async () => {
     try {
-      await fetch("/api/export/email", {
+      await fetch("/careers/api/export/email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

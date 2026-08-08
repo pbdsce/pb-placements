@@ -147,7 +147,7 @@ export function ResumeUpload() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      const response = await fetch('/api/resume/upload', {
+      const response = await fetch('/careers/api/resume/upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session?.access_token}`,

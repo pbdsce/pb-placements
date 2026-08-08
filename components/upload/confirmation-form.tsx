@@ -207,7 +207,7 @@ export function ConfirmationForm({ parsedData }: ConfirmationFormProps) {
         projects: formData.projects,
       };
 
-      const response = await fetch('/api/profile/update', {
+      const response = await fetch('/careers/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

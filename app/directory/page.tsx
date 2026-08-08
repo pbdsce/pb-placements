@@ -190,7 +190,7 @@ function DirectoryContent() {
   try {
     const memberDataPromises = selectedMembers.map(async (member) => {
       try {
-        const res = await fetch('/api/export/email', {
+        const res = await fetch('/careers/api/export/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

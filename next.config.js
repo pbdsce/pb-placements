@@ -41,6 +41,17 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  basePath: '/careers',
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/careers',
+        permanent: true,
+        basePath: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
