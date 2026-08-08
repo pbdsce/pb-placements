@@ -46,7 +46,7 @@ function SignInForm() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/email-sign-in", {
+      const response = await fetch("/careers/api/email-sign-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

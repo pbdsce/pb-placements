@@ -61,7 +61,7 @@ export function ExportProfileButton({
   
  const handleExportPDF = async () => {
   try {
-    const res = await fetch('/api/export/pdf', {
+    const res = await fetch('/careers/api/export/pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ memberId, memberName }),
@@ -97,7 +97,7 @@ export function ExportProfileButton({
 
   const handleExportToMail = async () => {
 try {
-  const res = await fetch('/api/export/email', {
+  const res = await fetch('/careers/api/export/email', {
     method: 'POST',
     body: JSON.stringify({
       memberId,
@@ -150,7 +150,7 @@ try {
   
   const handleSendEmail = async () => {
   try {
-    const res = await fetch("/api/sendmail", {
+    const res = await fetch("/careers/api/sendmail", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -219,7 +219,7 @@ try {
     setDeleting(true);
 
     try {
-      const response = await fetch("/api/profile/delete", { method: "DELETE" });
+      const response = await fetch("/careers/api/profile/delete", { method: "DELETE" });
       const result = await response.json();
 
       if (!response.ok) {

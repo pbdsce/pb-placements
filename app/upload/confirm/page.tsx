@@ -264,7 +264,7 @@ function ConfirmPageContent() {
 
           if (!parsedData) {
             // Cache miss: fall back to reparse via /api/resume/upload
-            const reparseRes = await fetch('/api/resume/upload', {
+            const reparseRes = await fetch('/careers/api/resume/upload', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -585,7 +585,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       projects: cleanedProjects,
     };
 
-    const res = await fetch('/api/profile/update', {
+    const res = await fetch('/careers/api/profile/update', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
